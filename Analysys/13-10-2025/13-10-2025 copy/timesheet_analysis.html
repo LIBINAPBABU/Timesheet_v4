@@ -1,0 +1,600 @@
+{% extends "topNav.html" %}
+<!-- Title -->
+{% block title %}Time sheet analysis Analysis{% endblock %}
+{% block dashboard_active %}active{% endblock %}
+<!-- head -->
+{% block Head %}
+
+<style>
+    #chartdiv {
+        width: 100%;
+        height: 28.5dvh;
+    }
+    @media (max-width: 1366px) {
+        #chartdiv {
+            height: 30.5dvh;
+        }
+    }
+    @media (min-width: 1367px) and (max-width: 1600px) {
+        #chartdiv {
+            height: 27.9dvh;
+        }
+    }
+    #Piechartdiv {
+        width: 100%;
+        height: 34dvh;
+    }
+    .hide_column {
+        display: none;
+    }
+    .text-nowrap {
+        text-wrap: nowrap;
+    }
+</style>
+<script>
+    var root = null;
+    // am5.ready(function() {
+    function xyStackChart(chartdata,task_List){
+        if(root != null){
+            root.dispose();
+        }
+        // Create root element
+        // https://www.amcharts.com/docs/v5/getting-started/#Root_element
+        root = am5.Root.new("chartdiv");
+        root._logo.dispose();
+        // Set themes
+        // https://www.amcharts.com/docs/v5/concepts/themes/
+        root.setThemes([
+        am5themes_Animated.new(root)
+        ]);
+
+        // Create chart
+        // https://www.amcharts.com/docs/v5/charts/xy-chart/
+        var chart = root.container.children.push(am5xy.XYChart.new(root, {
+        panX: false,
+        panY: false,
+        wheelX: "panX",
+        wheelY: "zoomX",
+        paddingLeft: 0,
+        layout: root.verticalLayout
+        }));
+        
+        // Add scrollbar
+        // https://www.amcharts.com/docs/v5/charts/xy-chart/scrollbars/
+        chart.set("scrollbarX", am5.Scrollbar.new(root, {
+        orientation: "horizontal"
+        }));
+        
+        var data = chartdata
+        // Create axes
+        // https://www.amcharts.com/docs/v5/charts/xy-chart/axes/
+        var xRenderer = am5xy.AxisRendererX.new(root, {
+        minorGridEnabled: true
+        });
+        var xAxis = chart.xAxes.push(am5xy.CategoryAxis.new(root, {
+        categoryField: "day",
+        renderer: xRenderer,
+        tooltip: am5.Tooltip.new(root, {})
+        }));
+
+        xRenderer.grid.template.setAll({
+        location: 1
+        })
+        xRenderer.labels.template.setAll({
+        rotation: 350,
+        oversizedBehavior: "wrap",
+        maxHeight: 150,
+        paddingRight: 5,
+        });
+        xAxis.data.setAll(data);
+
+        var yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+        min: 0,
+        renderer: am5xy.AxisRendererY.new(root, {
+            strokeOpacity: 0.1
+        })
+        }));
+
+        // Add series
+        // https://www.amcharts.com/docs/v5/charts/xy-chart/series/
+        function makeSeries(name, fieldName) {
+        var series = chart.series.push(am5xy.ColumnSeries.new(root, {
+            name: name,
+            stacked: true,
+            xAxis: xAxis,
+            yAxis: yAxis,
+            valueYField: fieldName,
+            categoryXField: "day"
+        }));
+
+        series.columns.template.setAll({
+            tooltipText: "{name}: {valueY}",
+            tooltipY: am5.percent(10)
+        });
+        series.data.setAll(data);
+
+        // Make stuff animate on load
+        // https://www.amcharts.com/docs/v5/concepts/animations/
+        series.appear();
+
+        series.bullets.push(function () {
+            return am5.Bullet.new(root, {
+            sprite: am5.Label.new(root, {
+                text: "{valueY}",
+                fill: root.interfaceColors.get("alternativeText"),
+                centerY: am5.p50,
+                centerX: am5.p50,
+                populateText: true
+            })
+            });
+        });
+
+        }
+
+        $.each(task_List,function(index,obj)
+        {
+            let seriesLabel = ( obj.quotation == "Non project" ? "Others" : obj.quotation )+" "+obj.taskName;
+            makeSeries(seriesLabel,seriesLabel)
+        });
+
+        // Make stuff animate on load
+        // https://www.amcharts.com/docs/v5/concepts/animations/
+        chart.appear(1000, 100);
+
+    // }); // end am5.ready()
+    }
+</script>
+<!-- Pie chart -->
+<script>
+    // am4core.ready(function() {
+    function pieChart(pieData){
+        // Themes begin
+        am4core.useTheme(am4themes_animated);
+        // Themes end
+
+        // Create chart instance
+        var piechart = am4core.create("Piechartdiv", am4charts.PieChart);
+        piechart.logo.dispose();
+        // Preprocess data to create a combined category
+        pieData.forEach(item => {
+            item.combinedCategory = item.projectName ? `${item.quotation} - ${item.projectName}` : item.quotation;
+        });
+        // Add and configure Series
+        var pieSeries = piechart.series.push(new am4charts.PieSeries());
+        pieSeries.dataFields.value = "total_hrs";
+        pieSeries.dataFields.category = "combinedCategory";
+
+        // Let's cut a hole in our Pie chart the size of 30% the radius
+        piechart.innerRadius = am4core.percent(35);
+
+        // Put a thick white border around each Slice
+        pieSeries.slices.template.stroke = am4core.color("#fff");
+        pieSeries.slices.template.strokeWidth = 2;
+        pieSeries.slices.template.strokeOpacity = 1;
+        pieSeries.slices.template
+            // change the cursor on hover to make it apparent the object can be interacted with
+            .cursorOverStyle = [{
+                "property": "cursor",
+                "value": "pointer"
+            }];
+
+        pieSeries.alignLabels = false;
+        pieSeries.labels.value = false;
+        pieSeries.alignLabels = true;
+        pieSeries.labels.template.maxWidth = 70;
+        pieSeries.labels.template.wrap = true;
+        pieSeries.labels.template.fontSize = 10;
+        pieSeries.labels.template.text = "{quotation} {projectName}";
+
+        // pieSeries.ticks.template.disabled = true;
+
+        // Create a base filter effect (as if it's not there) for the hover to return to
+        var shadow = pieSeries.slices.template.filters.push(new am4core.DropShadowFilter);
+        shadow.opacity = 0;
+
+        // Create hover state
+        var hoverState = pieSeries.slices.template.states.getKey("hover"); // normally we have to create the hover state, in this case it already exists
+
+        // Slightly shift the shadow and make it more prominent on hover
+        var hoverShadow = hoverState.filters.push(new am4core.DropShadowFilter);
+        hoverShadow.opacity = 0.7;
+        hoverShadow.blur = 5;
+
+        piechart.data =pieData
+    }
+    // }); // end am4core.ready()
+</script>
+{% endblock %}
+
+<!-- Main content -->
+{% block main-content %}
+
+<!--  Timesheet Bar Chart and  project Pie Chart -->
+<div class="row justify-content-center mx-auto"> 
+    <div class="col-sm-12 col-md-12 col-lg-9 px-0">
+        <div class="card">
+            <div class="card-header">
+                <div class="justify-content-between row" style="height: 28px;">
+                    <div class="col-12 col-md-4 lg-2 ">
+                        <label for=""></label>
+                        <i class="fas fa-chart-bar me-1 "></i><strong>Worked Hours : </strong><label style="font-weight: bold; color: green;" id="totalWorkedhrs"></label>
+                    </div>
+                    <div class="col-12 col-md-8 lg-10 ">
+                        <form action="" id="filterForm" method="POST">
+                            {% csrf_token %}
+                            <div class="row justify-content-end align-items-center">
+                                <div class="col-6 col-md-6 col-lg-3 mb-1">
+                                    <div class="form-outline ">
+                                        <input type="date" id="from_date" name="from_date" required   class="form-control filter-Date" />
+                                        <label class="form-label" for="from_date"><i class="fas fa-filter"></i>From</label>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-6 col-lg-3 mb-1">
+                                    <div class="form-outline ">
+                                        <input type="date" id="to_date" name="to_date" value="" required class="form-control filter-Date" />
+                                        <label class="form-label" for="to_date"><i class="fas fa-filter"></i>To</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body d-flex align-items-center">
+                <div style="width: 5%;" class="text-center">
+                    <i class="bi bi-arrow-left-square-fill" id="leftArrow" style="cursor: pointer;font-size: 2rem;" ></i>
+                </div>
+                <div id="chartdiv"></div>
+                <div style="width: 5%;" class="text-center">
+                    <i class="bi bi-arrow-right-square-fill" id="rightArrow" style="cursor: pointer;font-size: 2rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-12 col-md-12 col-lg-3 ps-1 pe-0">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-chart-pie"></i><strong>Work Hours Overview / Projects</strong>
+            </div>
+            <div class="card-body p-0">
+                <div id="Piechartdiv"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--Timesheet Submit table -->
+<div class="row mt-1  mx-auto" >
+    <div class="col-sm-12 col-md-12 col-lg-12 px-0">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between">
+                <div><i class="fas fa-table"></i><strong>TimeSheet Log</strong></div>
+                <a class="col-lg-6 text-end m-0" data-bs-toggle="modal" data-bs-target="#actualVsBudgetModel">Budget vs Actual Hours Overview / Tasks</a>
+            </div>
+            <div class="card-body">
+                <table  class="dataTable display compact cell-border" id="datatables" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Quotation</th>
+                            <!-- <th>Project</th> -->
+                            <!-- <th>Milestone</th> -->
+                            <th>Task</th>
+                            <th>HRS</th>
+                            <th>Rating</th>
+                            <th>Status</th>
+                            <th>Rejection Reason</th>
+                            <th>id</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- actualvsbudget hours model -->
+<div class="modal fade" id="actualVsBudgetModel" aria-labelledby="actualVsBudget_modal" aria-hidden="true" >
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel" >Budget vs Actual Hours Overview / Tasks</h5>
+                <button type="button" class="btn-close modalCancelButton" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table  class="dataTable display compact cell-border" id="budgetActualHrsTable" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Quotation</th>
+                            <th>Task Name</th>
+                            <th>Actual</th>
+                            <th>Budget</th>
+                            <th>Delta</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+ <!-- Edit timesheet Modal -->
+ <div class="modal fade" id="Edit_Submission_Modal" tabindex="-1" aria-labelledby="Edit_Submission_Modal" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel" >Edit/Delete Submission</h5>
+                <button type="button" id="close" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="" id="Edit_Form" method="">
+                    {% csrf_token %}
+                     <div class="justify-content-around row mb-2">
+                        <div class="col-6 col-md-6 col-lg-8">
+                            <div class="form-outline">
+                                <input type="text" readonly class="form-control" name="project_name" value=""  id="E_project" required>
+                                <label class="form-label" for="project_name">Project</label>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-6 col-lg-4 ">
+                            <div class="form-outline">
+                                <input type="date" class="form-control" id="E_sub_date" name="date" value="" required>
+                                <label class="form-label" for="E_sub_date">Date</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="justify-content-around row mb-2">
+                        <div class="col-12 col-md-6 col-lg-8">
+                            <div class="form-outline">
+                                <input type="text" readonly class="form-control" name="task" value=""  id="E_task" required>
+                                <label class="form-label" for="task">Task</label>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <div class="form-outline ">
+                                <input type="text" class="form-control" id="E_hours" name="hours" value="" min="0" max="15" required>
+                                <label class="form-label" for="E_hours">Hours</label>
+                            </div>
+                        </div>   
+                    </div>
+                    <!-- submit -->
+                    <div class="justify-content-between row mb-2">  
+                        <div class="col-6 col-md-4 col-lg-3" >
+                            <span style="display: none;"><input type="text" class="form-control" id="E_id" name="id" value="" required></span>
+                            <button type="submit" id="updateTaskbtn" class="form-control bg-info">SUBMIT</button> 
+                        </div>
+                        <div class="col-6 col-md-4 col-lg-3" >
+                            <span style="display: none;">
+                                <label class="form-group border-lable-flt">
+                                    <select class="form-control custom-select" id="E_location" name="location"  style="height: 37px" required>
+                                        <option value="Office">Office</option>
+                                        <option value="On-site">On-site</option>
+                                        <option value="Home">Home</option>
+                                    </select>
+                                    <span>Location</span>
+                                </label>
+                            </span>
+                            <button class="form-control bg-danger" id="deletebtn" >DELETE </button>
+                        </div>
+                    </div>
+                </form>
+            </div>            
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        var chartData = [];
+        var taskList = [];
+        var splitValue = 10;
+        let start = 0;
+        let end = start + splitValue;
+        let dataCount = 0;
+        $.ajax({
+            url:"{% url 'getTimesheetLogs'%}",
+                type:"GET",
+                dataType:"json",
+                success:function(response){
+                    pieChart(response.pieData)
+
+                    dataCount = response.chartdata.length;
+                    chartData = response.chartdata
+                    taskList = response.task_List
+                    var slicedData = chartData.slice(start, end);
+                    xyStackChart(slicedData,taskList)
+
+                    actualBudgetLoadTable(response.taskwiseActualBudgetData)
+                    loadDatatable(response.logs)
+                    document.getElementById("from_date").value = response.from_date;
+                    document.getElementById("to_date").value = response.to_date;
+                    document.getElementById("from_date").max = response.to_date;
+                    document.getElementById("to_date").min = response.from_date;
+                    document.getElementById("to_date").focus()
+                    document.getElementById("from_date").focus()
+                    $('#totalWorkedhrs').html(response.totalWorkedHours.hrs +":hrs");
+                }
+        });
+    
+        $(".filter-Date").change(function (e){
+            e.preventDefault();
+            if (this.id =='from_date') {document.getElementById("to_date").min = this.value }
+            var formdata = $("#filterForm").serialize()
+            formdata+='&mode=filter_timesheetlog'
+            let args = {type:"POST", url:"{%url 'getTimesheetLogs'%}", jsonData:formdata};
+            ajaxRquest(args);
+        });
+   
+        function ajaxRquest(args){
+            $.ajax({
+                type:args.type,
+                url:args.url,
+                data:args.jsonData,
+                dataType:"json",
+                headers:{'X-CSRFToken':'{% csrf_token %}'},
+                success: function(response) {
+                    pieChart(response.pieData)
+
+                    dataCount = response.chartdata.length;
+                    chartData = response.chartdata
+                    taskList = response.task_List
+                    var slicedData = chartData.slice(start, end);
+                    xyStackChart(slicedData,taskList)
+
+                    actualBudgetLoadTable(response.taskwiseActualBudgetData)
+                    loadDatatable(response.logs)
+                    document.getElementById("from_date").value = response.from_date;
+                    document.getElementById("to_date").value = response.to_date;
+                    document.getElementById("from_date").max = response.to_date;
+                    document.getElementById("to_date").min = response.from_date;
+                    $('#totalWorkedhrs').html(response.totalWorkedHours.hrs +":hrs");
+                    $("#Edit_Submission_Modal").modal('hide');
+                }
+            });
+        };
+        var scrollYValue = '34.6dvh'; // Default scroll value
+        // Check screen width
+        if ($(window).width() <= 1366) {
+            scrollYValue = '35.5dvh'; // Change scroll value when screen width is 1300px or less
+        }
+        if ($(window).width() > 1367 & $(window).width() <= 1600) {
+            scrollYValue = '36dvh'; // Change scroll value when screen width is 1300px or less
+        }
+
+        // Right arrow click
+        $('#rightArrow').on("click", function() {
+            if (end >= dataCount) {
+                // $('#rightArrow').css('disabled', true); // Disable right arrow if at the end
+                $('#rightArrow').hide()
+            } else {
+                start = start + splitValue;
+                end = start + splitValue;
+                var slicedData = chartData.slice(start, end);
+                xyStackChart(slicedData,taskList);
+                // $('#leftArrow').css('disabled', false); // Enable left arrow
+                $('#leftArrow').show()
+            }
+        });
+
+        // Left arrow click
+        $('#leftArrow').on("click", function() {
+            if (start <= 0) {
+                // $('#leftArrow').css('disabled', true); // Disable left arrow if at the start
+                $('#leftArrow').hide()
+            } else {
+                end = start;
+                start = start - splitValue;
+                var slicedData = chartData.slice(start, end);
+                xyStackChart(slicedData,taskList);
+                // $('#rightArrow').css('disabled', false); // Enable right arrow
+                $('#rightArrow').show()
+            }
+        });
+
+        function loadDatatable(tableData){
+            var table = $('#datatables').DataTable({
+                data:tableData,
+                order: [
+                        [0, 'desc']
+                    ],
+                columns: [
+                    {data: 'date'}, 
+                    {data: null, // Use null since we will define a custom render function
+                        render: function(data, type, row) {
+                            // Check if projectName is "Non project" and return an empty string
+                            if (data.projectName === "Non project") {
+                                return "Others"; // Just return the quotation without '- projectName'
+                            }
+                            // Otherwise, combine 'quotation' and 'projectName'
+                            return data.quotation + (data.projectName ? ' - ' + data.projectName : '');
+                        }
+                    },
+                    {data: 'taskName'},
+                    {data: 'hours'},
+                    {data: 'rate', 
+                        render: function(data, type, row) {
+                            switch (data) {
+                            case 1:
+                                return 'Poor';
+                                break;
+                            case 2:
+                                return 'Average';
+                                break;
+                            case 3:
+                                return 'Good';
+                                break;
+                            case 4:
+                                return 'Very good';
+                                break;
+                            case 5:
+                                return 'Excellent';
+                                break;
+                            default:
+                                return ''; // In case there are other values
+                        }
+                    }},
+                    {data: 'timesheet_status',
+                        createdCell: function(td, cellData, rowData, row, col) {
+                        switch (cellData) {
+                            case "Accepted":
+                                $(td).css('color', 'green');
+                                break;
+                            case "Rejected":
+                                $(td).css('color', 'red');
+                                break;
+                            case "Submitted":
+                                $(td).css('color', 'blue');
+                                break;
+                            default:
+                                break;
+                        }
+                    }},
+                    {data: 'rejection_reason'},
+                    {data: 'id'}
+            ],
+                searching: false,
+                paging: false,
+                scrollCollapse: true,
+                scrollY: scrollYValue,
+                columnDefs :[  { className : "text-nowrap",targets:[1,2,3,4,5]},
+                                { className : "hide_column",targets:[7]},
+                            ],
+                responsive: true,
+                destroy: true,
+                });
+        };
+        
+        function actualBudgetLoadTable(taskwiseActualBudgetData){
+            var table = $('#budgetActualHrsTable').DataTable({
+                data:taskwiseActualBudgetData,
+                order: [
+                        [0, 'desc']
+                    ],
+                columns: [
+                    {data:'quotation'}, 
+                    {data:'taskName'},
+                    {data:'act_hrs'},
+                    {data:'bdg_hrs'},
+                    {data:null,
+                        render: function(data, type, row) {
+                            delta = data.act_hrs - data.bdg_hrs ;
+                            return delta; 
+                        },
+                    }
+                ],
+                "fnRowCallback": function(nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    if (parseInt($(nRow).find('td:eq(4)').text()) > 0) {
+                        $('td', nRow).addClass('text-danger');
+                    }
+                },
+                columnDefs :[ { className : "text-nowrap",targets:[0,1]},
+                { className : "text-center",targets:[2,3,4]}],
+                searching: false,
+                paging: false,
+                responsive: true,
+                destroy: true,
+                ordering:false
+            })
+        }
+    });
+</script>
+
+{% endblock %}

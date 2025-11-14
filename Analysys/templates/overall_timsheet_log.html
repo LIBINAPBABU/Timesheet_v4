@@ -1,0 +1,133 @@
+{% extends "topNav.html" %}
+
+{% block title %}Projects summary {% endblock %}
+
+{% block overall_timesheet_active %}active{% endblock %}
+
+{% block main-content %}
+
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center row">
+            <div class="col-sm-12 col-md-3 col-lg-2">
+                <i class="fas fa-table"></i> <strong>Task Summary Log</strong>
+            </div>
+            <div class="col-sm-12 col-md-6 col-lg-9">
+                <form class="project_analysis "  action="/analysis/OverallTimesheetLog/" method="POST">
+                    {% csrf_token %}
+                    <div  class="justify-content-end row">
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-group border-lable-flt">
+                                <select class="form-control custom-select selectpicker" name="project" id="project" data-live-search="true">
+                                    <option value>All Project</option>  
+                                    {% for quotation in pro_name%}
+                                        <option value="{{quotation.quotation_no}}" {% if quotation.quotation_no == selectedProject %} selected {% endif %}>
+                                            {{quotation.quotation_no}} - {{quotation.customer_name}} - {{quotation.project__name}}</option>
+                                    {% endfor %}
+                                </select > <span><i class="fas fa-filter"></i>Project</span>
+                            </label>
+                        </div>   
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-group border-lable-flt">
+                                <select class="form-control custom-select selectpicker" data-live-search="true" name="Empid" id="Empid">
+                                    <option value="">All Employee</option>      
+                                    {% for Empname in emp_name%}
+                                        <option value="{{Empname.id}}" {% if Empname.id == selectedEmpolyee|add:0 %} selected {% endif %} >{{Empname.first_name}}</option>
+                                    {% endfor %}
+                                </select><span><i class="fas fa-filter"></i>Employee</span>
+                            </label>
+                        </div>
+                        <div class="col-sm-6 col-md-6 col-lg-2">
+                            <div class="form-outline">
+                                <input type="date"  class="form-control filter-Date" id="from_date" name="from_date" value="{{from_date|safe}}" />
+                                <label class="form-label" for="From_date"><i class="fas fa-filter"></i>From</label>
+                            </div> 
+                        </div>
+                        <div class="col-6 col-md-6 col-lg-2">
+                            <div class="form-outline">
+                                <input type="date"  class="form-control filter-Date" id="to_date" name="to_date" value="{{to_date|safe}}"  required />
+                                <label class="form-label" for="To_date"><i class="fas fa-filter"></i>To</label>
+                            </div> 
+                        </div>
+                        <!--submit-->
+                        <div class="col-6 col-md-6 col-lg-2">
+                            <button type="submit" class="form-control bg-info">SUBMIT</button> 
+                        </div>
+                    </div>
+                </form> 
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <table class="dataTable display nowrap compact cell-border" style="width: 100%;">
+            <thead>
+                <th>Date</th>
+                <th>Name</th>
+                <th>Project</th>
+                <th>Milestone</th>
+                <th>Task</th>
+                <th>Hours</th>
+                <th>Rating</th>
+                <th>Status</th>
+                <th>Rejection Reason</th>
+            </thead>
+            <tbody>
+                {% for log in logs%}
+                    <tr>
+                        <td>{{log.date|date:'Y-m-d'}}</td>
+                        <td>{{log.uid__first_name}}</td>
+                        <td>{{ log.quotation }}{% if log.projectName %} - {{ log.projectName }}{% endif %}</td>
+                        <td>{{log.milestoneName}}</td>
+                        <td>{{log.taskName}}</td>
+                        <td>{{log.hours}}</td>
+                        <td>{{log.rating}}</td>                      
+                        <td class="
+                        {% if log.timesheet_status == 'submitted' %}
+                            text-info
+                        {% elif log.timesheet_status == 'Rejected' %}
+                            text-danger
+                        {% elif log.timesheet_status == 'Accepted' %}
+                            text-success
+                        {% else %}
+                            text-primary
+                        {% endif %}">{{log.timesheet_status|default:''}}</td>
+                        <td>{{log.rejection_reason|default:''}}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script type="text/javascript">
+    var scrollYValue = '67.7dvh'; // Default scroll value
+    // Check screen width
+    if ($(window).width() <= 1366) {
+        scrollYValue = '66.6dvh'; // Change scroll value when screen width is 1300px or less
+    }
+    if ($(window).width() > 1367 & $(window).width() <= 1600) {
+        scrollYValue = '68.4dvh'; // Change scroll value when screen width is 1300px or less
+    }
+    $(document).ready( function () {
+        var table = $('.dataTable').DataTable({
+        dom: 'Bfrtip',
+        buttons: ['excel'],//, 'pdf', 'print' ,'copy', 'csv',
+        ordering : true,
+        lengthMenu: [200,100,50,25,10],
+        scrollX: true,
+        scrollCollapse: true,
+        scrollY: scrollYValue,
+        responsive:true,
+      });
+    function updateDateConstraints() {
+        const fromDate = document.getElementById("from_date").value;
+        const toDate = document.getElementById("to_date").value;
+
+        document.getElementById("to_date").min = fromDate;
+        document.getElementById("from_date").max = toDate;
+    }
+    updateDateConstraints(); // Initialize the constraints when the page loads
+    $(".filter-Date").change(updateDateConstraints); // Update constraints when date inputs change
+    });
+</script>
+{% endblock %}

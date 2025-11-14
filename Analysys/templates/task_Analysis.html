@@ -1,0 +1,242 @@
+{% extends "topNav.html" %}
+
+{% block title %}Task Analysis{% endblock %}
+{% block task_active %}active{% endblock %}
+{% block Head %}
+<style>
+    #chartdiv {
+        width: 100%;
+        height: 81.5dvh;
+    }
+    @media (max-width: 1366px) {
+        #chartdiv { height: 83dvh; }
+    }
+    @media (min-width: 1367px) and (max-width: 1600px) {
+        #chartdiv { height: 81.9dvh; }
+    }
+</style>
+    <!-- Chart code -->
+    <script>
+        var root = null;
+        function loadChart(data){
+            if(root != null){
+                root.dispose();
+            }
+            // Create root element
+            // https://www.amcharts.com/docs/v5/getting-started/#Root_element
+            root = am5.Root.new("chartdiv");
+            root._logo.dispose();
+            // Set themes
+            // https://www.amcharts.com/docs/v5/concepts/themes/
+            root.setThemes([
+            am5themes_Animated.new(root)
+            ]);
+
+            // Create chart
+            // https://www.amcharts.com/docs/v5/charts/xy-chart/
+            var chart = root.container.children.push(am5xy.XYChart.new(root, {
+            panX: false,
+            panY: false,
+            wheelX: "panX",
+            wheelY: "zoomX",
+            paddingLeft: 0,
+            layout: root.verticalLayout
+            }));
+            
+            // Add scrollbar
+            // https://www.amcharts.com/docs/v5/charts/xy-chart/scrollbars/
+            chart.set("scrollbarX", am5.Scrollbar.new(root, {
+            orientation: "horizontal"
+            }));
+            
+            var data = data
+            // Create axes
+            // https://www.amcharts.com/docs/v5/charts/xy-chart/axes/
+            var xRenderer = am5xy.AxisRendererX.new(root, {
+            minorGridEnabled: true
+            });
+            var xAxis = chart.xAxes.push(am5xy.CategoryAxis.new(root, {
+            categoryField: "taskName",
+            renderer: xRenderer,
+            tooltip: am5.Tooltip.new(root, {})
+            }));
+
+            xRenderer.grid.template.setAll({
+            location: 1
+            })
+            xRenderer.labels.template.setAll({
+            rotation: 270,
+            oversizedBehavior: "wrap",
+            maxHeight: 150,
+            centerY: am5.p50,
+            centerX: am5.p100,
+            paddingRight: 5,
+            });
+            xAxis.data.setAll(data);
+
+            var yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+            min: 0,
+            renderer: am5xy.AxisRendererY.new(root, {
+                strokeOpacity: 0.1
+            })
+            }));
+
+            // Add series
+            // https://www.amcharts.com/docs/v5/charts/xy-chart/series/
+            function makeSeries(name, fieldName) {
+            var series = chart.series.push(am5xy.ColumnSeries.new(root, {
+                name: name,
+                stacked: true,
+                xAxis: xAxis,
+                yAxis: yAxis,
+                valueYField: fieldName,
+                categoryXField: "taskName"
+            }));
+
+            series.columns.template.setAll({
+                tooltipText: "{name}: {valueY}",
+                tooltipY: am5.percent(10)
+            });
+            series.data.setAll(data);
+
+            // Make stuff animate on load
+            // https://www.amcharts.com/docs/v5/concepts/animations/
+            series.appear();
+
+            series.bullets.push(function () {
+                return am5.Bullet.new(root, {
+                sprite: am5.Label.new(root, {
+                    text: "{valueY}",
+                    fill: root.interfaceColors.get("alternativeText"),
+                    centerY: am5.p50,
+                    centerX: am5.p50,
+                    populateText: true
+                })
+                });
+            });
+
+            }
+
+            $.each({{series_data|safe}},function(index,obj)
+            {
+                makeSeries(obj.quotationName,obj.quotationName)
+            });
+
+            // Make stuff animate on load
+            // https://www.amcharts.com/docs/v5/concepts/animations/
+            chart.appear(1000, 100);
+
+        }
+    </script>
+
+
+{% endblock %}
+     
+{% block main-content %}
+    
+    <!-- Worked hours -->
+    <div class="card ">
+        <div class="card-header">
+            <div class="justify-content-between row" >
+                <div class="col-6 col-md-4 col-lg-2 ">
+                   <i class="fas fa-chart-bar me-1"></i><strong>Task  Analysis</strong>
+                </div>
+                <div class="col-6 col-md-4 col-lg-9 ">
+                    <form class="Task_Analysis" action="/analysis/task_Analysis/" method="POST">
+                        {% csrf_token %}
+                        <div class="row justify-content-end">              
+                            <!-- all projects -->
+                            <div class="col-12 col-md-6 col-lg-3">
+                                <label class="form-group border-lable-flt">
+                                    <select class="form-control custom-select selectpicker"  name="project" id="project" data-live-search="true">
+                                        <option value>All Project</option>  
+                                        {% for quotation in quotations%}
+                                            <option value="{{quotation.quotation_no}}" {% if quotation.quotation_no == selectedProject %} selected {% endif %}>
+                                                {{quotation.quotation_no}} - {{quotation.customer_name}} - {{quotation.project__name}}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <span><i class="fas fa-filter"></i>Projects</span>
+                                </label>
+                            </div> 
+                            <!-- all employees -->
+                            <div class="col-12 col-md-6 col-lg-3">
+                                <label class="form-group border-lable-flt">
+                                    <select class="form-control custom-select selectpicker" name="Empid" id="Empid" data-live-search="true">
+                                        <option value >All Employee</option>      
+                                        {% for Empname in emp_name%}
+                                            <option  value="{{Empname.id}}" {% if Empname.id == selectedEmpolyee|add:0 %} selected {% endif %}>{{Empname.first_name}}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <span><i class="fas fa-filter"></i>Employees</span>
+                                </label>
+                            </div>    
+                            <!--from date-->
+                            <div class="col-6 col-md-6 col-lg-2 ">
+                                <div class="form-outline ">
+                                    <input type="date"  class="form-control" id="Date" name="from_date" value="{{from_date|safe}}" />
+                                    <label class="form-label" for="From_date"><i class="fas fa-filter"></i>From</label>
+                                </div> 
+                            </div>
+                            <!--To  Date-->
+                            <div class="col-6 col-md-6 col-lg-2">
+                                <div class="form-outline ">
+                                    <input type="date"  class="form-control" id="Date" name="to_date" value="{{to_date|safe}}"  required />
+                                    <label class="form-label" for="To_date"><i class="fas fa-filter"></i>To</label>
+                                </div> 
+                            </div>
+                            <div class="col-6 col-md-4 col-lg-2" >
+                                <button type="submit" class="form-control bg-info">SUBMIT</button> 
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="card-body d-flex align-items-center">
+            <div style="width: 5%;" class="text-center">
+                <i class="bi bi-arrow-left-square-fill " id="leftArrow" style="cursor: pointer;font-size: 2rem;" ></i>
+            </div>
+            <div id="chartdiv"></div>
+            <div style="width: 5%;" class="text-center">
+                <i class="bi bi-arrow-right-square-fill" id="rightArrow" style="cursor: pointer;font-size: 2rem;"></i>
+            </div>
+        </div>
+    </div>
+<script>
+    $(document).ready(function(){
+        var data = {{data|safe}};
+        var splitValue = 10;
+        let start = 0;
+        let end = start + splitValue;
+        let dataCount = data.length;
+        var slicedData = data.slice(start, end);
+        loadChart(slicedData);
+
+        // Right arrow click
+        $('#rightArrow').on("click", function() {
+            if (end >= dataCount) {
+                $('#rightArrow').hide()
+            } else {
+                start = start + splitValue;
+                end = start + splitValue;
+                var slicedData = data.slice(start, end);
+                loadChart(slicedData);
+                $('#leftArrow').show()
+            }
+        });
+
+        // Left arrow click
+        $('#leftArrow').on("click", function() {
+            if (start <= 0) {
+                $('#leftArrow').hide()
+            } else {
+                end = start;
+                start = start - splitValue;
+                var slicedData = data.slice(start, end);
+                loadChart(slicedData);
+                $('#rightArrow').show()
+            }
+        });
+    });
+</script>
+{% endblock %}  

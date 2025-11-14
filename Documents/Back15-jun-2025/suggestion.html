@@ -1,0 +1,183 @@
+{% extends "topNav.html" %}
+{% block title %}Lesson {% endblock %} 
+{% block suggestion_active %}active{% endblock %}
+{% block Head %}
+    <meta name="csrf-token" content="{{ csrf_token }}">
+{% endblock %} 
+{% block main-content %}
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-table"></i> <strong>Suggestion Table</strong>
+        <span style="float: right;"><a href="" data-bs-toggle="modal" data-bs-target="#add_suggestion" id="add_suggestion_link" style="color:rgb(9, 139, 172) ;">+ Add Suggestion</a> </span>
+    </div>
+    <div class="card-body">
+        <table id="suggestionTable" class="dataTable display compact cell-border" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Suggestion/Feedback</th>
+                    <th>Status</th>
+                    <th>Edit</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in data %}
+                    <tr id={{item.id}} >
+                        <td>{{ item.uid__first_name }}</td>
+                        <td class="remarks">{{ item.remarks }}</td>
+                        <td class="suggestionStatus">{{item.suggestion_status}}</td>
+                        <td><i class="bi bi-pencil-square editIcon text-info" {% if item.uid != request.user.id %} style="pointer-events: none; opacity: 0.5;" {% endif %} data-bs-toggle="modal" data-bs-target="#add_suggestion"></i></td>
+                        <td><i class="bi bi-trash deleteIcon text-danger" {% if item.uid != request.user.id %} style="pointer-events: none; opacity: 0.5;" {% endif %} ></i></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>        
+    </div>
+</div>
+<!--  Add Suggestion Modal -->
+<div class="modal fade" id="add_suggestion" tabindex="-1" aria-labelledby="suggestion_Modal" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/documents/suggestion/" enctype="multipart/form-data"  method="POST" autocomplete="off">
+                    {% csrf_token %}
+                    <div class="d-flex flex-row mb-3 gap-2">
+                        <div class="form-outline ">
+                            <textarea class="form-control" placeholder="Suggestions" rows="4" id="remarks" name="remarks" required></textarea>
+                        </div>
+                        <input name="suggestionId" id="suggestionId" class="d-none" />                                                              
+                    </div>  
+                    
+                    <div class="d-flex flex-row mb-3 gap-2 justify-content-between">
+                        <label class="form-group border-lable-flt">
+                            <select class="form-control " id="suggestionStatusDropdown" name="suggestionStatusDropdown">
+                                <option value="Open">Open</option>
+                                <option value="On Going">On Going</option>
+                                <option value="Hold">Hold</option>
+                                <option value="Closed">Closed</option>
+                                <option value="Not applicable">Not applicable</option>
+                            </select>
+                            <span>Status</span>
+                        </label>
+                        <button type="submit" class="form-control bg-info w-50">Submit</button>     
+                    </div>  
+                                      
+                </form>
+            </div>            
+        </div>
+    </div>
+</div>
+<!-- common modals -->
+{% include 'notifications.html' %}
+<script>
+    $(document).ready(function() {
+        var scrollYValue = '70dvh'; // Default scroll value
+        // Check screen width
+        if ($(window).width() <= 1366) {
+            scrollYValue = '70dvh'; // Change scroll value when screen width is 1300px or less
+        }
+        if ($(window).width() > 1367 & $(window).width() <= 1600) {
+            scrollYValue = '71.2dvh'; // Change scroll value when screen width is 1300px or less
+        }
+
+        // Initialize the DataTable
+        var table = $('#suggestionTable').DataTable({
+            columnDefs: [
+                { width: '10%', targets: 0 },  // Set width of the first column (0 index)
+                { width: '70%', targets: 1 },
+                { width: '10%', targets: 2 },
+                { width: '5%', targets: 3 ,className:'text-center'},
+                { width: '5%', targets: 4 ,className:'text-center'}
+            ],
+            dom: 'Bfrtip',
+            buttons: [
+                {
+                    extend: 'excel',
+                    filename: 'suggestion'  // Set your desired file name here
+                }
+            ],
+            scrollY: scrollYValue,
+            scrollCollapse: true,
+            paging: false, // If you don't want pagination
+            responsive:true
+        });
+
+        // delete
+        $('.deleteIcon').click(function(event) {
+            var suggestionId = $(this).closest('tr').attr('id');
+            // Get CSRF token from meta tag
+            var csrfToken = $('meta[name="csrf-token"]').attr('content');
+
+            $('#warningText').text("Would you like to remove the suggestion?");
+            $('#warningModal').modal("show");
+            $('.warningOkBtn').off('click');
+
+            $('.warningOkBtn').on('click',function(event){
+                $('#warningModal').modal('hide')
+                $.ajax({
+                    url: '{% url "suggestion" %}', 
+                    type: 'POST',
+                    data : {suggestionId:suggestionId,mode:"deleteSuggestion"},
+                    headers: {
+                        'X-CSRFToken': csrfToken  // Add CSRF token in the headers
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status=='ok') {
+                            // You can add a success message or remove the row from the UI
+                            table.row('#' + suggestionId).remove(); // This removes the row with the given suggestionId
+                            table.draw();
+                        } else {
+                            console.error("Failed to delete suggestion");
+                        }
+                        $('#infoText').text("Removed Successfully!");
+                        $('#infoModal').modal("show");
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error: " + error); // Log any errors that occur
+                    }
+                });
+            });
+        });
+
+        if("{{request.user.role}}" == 'Admin'){
+            $('#suggestionStatusDropdown').prop('disabled',false)
+        }
+        else{
+            $('#suggestionStatusDropdown').prop('disabled',true)
+        }
+        
+    });
+
+    // edit suggestion
+    $('.editIcon').click(function(event){
+        var suggestionId = $(this).closest('tr').attr('id');
+        var remarks = $(this).closest('tr').find('.remarks').text();
+        var suggestionStatus = $(this).closest('tr').find('.suggestionStatus').text();
+        $('#remarks').val(remarks)
+        $('#suggestionId').val(suggestionId)
+        $('#suggestionStatusDropdown').val(suggestionStatus)
+        $('.modal-title').html('Edit Suggestion')
+    })
+    // add suggestion
+    $('#add_suggestion_link').click(function(event){
+        var suggestionId = null;
+        var remarks = ""
+        $('#remarks').val(remarks)
+        $('#suggestionId').val(suggestionId)
+        $('#suggestionStatusDropdown').val("Open")
+        $('.modal-title').html('Add Suggestion');
+    })
+
+    //Common modal close
+    $('.cancelButton').on("click",function() {
+        $('#infoModal').modal('hide');
+        $('#warningModal').modal('hide');
+    })
+</script>
+{% endblock %} 

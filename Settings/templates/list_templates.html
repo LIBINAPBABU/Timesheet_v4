@@ -1,0 +1,297 @@
+{% extends "topNav.html" %}
+
+{% block title %}list Templates{% endblock %}
+
+{% block template_active %}active{% endblock %}
+
+{% block Head %}
+
+<style>
+    .table-responsive { max-height:81.5dvh; }
+    @media (max-width: 1366px) {
+        .table-responsive { max-height:83.4dvh; }
+    }
+    @media (min-width: 1367px) and (max-width: 1600px) {
+        .table-responsive { max-height:82.1dvh; }
+    }
+</style>
+{% endblock %}
+
+{% block main-content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center col-12">
+        <div class="col-10">
+            <i class="fas fa-table"></i> <strong>Templates Details</strong>
+            <span class="ps-2" style="display: none;" id="milestoneAddLink"><a href="" data-bs-toggle="modal" data-bs-target="#Add_Milestone" style="color:rgb(9, 139, 172);">+ Add Milestone..</a> </span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center col-2">
+            <label class="form-group border-lable-flt col-12">
+                <select class="form-control" id="projectTypeDropdown">
+                    <option value="projects">Projects</option>
+                    <option value="non_projects">Others</option>
+                </select><span>Project Type</span>
+            </label>
+        </div>
+    </div>
+    <div class="card-body "> 
+        <div class="table-responsive">
+            <table id="tabletask" class="table table-sm table-bordered table-striped table-fixed position-relative" >
+                <thead class="position-sticky top-0">
+                    <th style="width: 3dvw;">#</th>
+                    <th>Milestone</th>
+                    <th>Task</th>
+                </thead>
+            </table>
+            <table id="nonprojectTableTask" class="table table-sm table-bordered table-striped table-fixed position-relative"  style="display: none;">
+                <thead class="position-sticky top-0">
+                    <th style="width: 3dvw;">#</th>
+                    <th>Milestone</th>
+                    <th>Task</th>
+                    <th>Delete</th>
+                </thead>
+            </table>
+        </div>
+    </div>
+</div>
+<!-- ADD Milestone Model -->
+<div id="Add_Milestone" class="modal fade" role="dialog">
+    <div class="modal-dialog">          
+        <div class="modal-content ">
+            <form id="milestoneform" autocomplete="off">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Add Milestone</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-outline my-2">
+                        <input type="text" class="form-control"  id="name" name="name" required>
+                        <label class="form-label" for="name">Milestone</label>
+                    </div>
+                    <div class="row justify-content-end">
+                        <div class="col-sm-4 col-md-4 col-lg-4">
+                            <button type="submit" class="form-control bg-info" id="milestonesubmitbtn" >SUBMIT</button>
+                        </div>
+                    </div>
+                </div>  
+            </form>
+        </div> 
+    </div>
+</div>
+
+<!-- ADD Task Model -->
+<div id="Add_Task" class="modal fade" role="dialog" >
+    <div class="modal-dialog" >    
+        <div class="modal-content" >
+            <form  method="POST" id="taskform" autocomplete="off">
+                {% csrf_token %}
+                <div class="modal-header" >
+                    <h5 class="modal-title" id="exampleModalLabel" >Add Task</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-outline mb-2">
+                        <input type="text" class="form-control"  id="name" name="name" value="" required>
+                        <label class="form-label" for="name">Task</label>
+                    </div>
+                    <div class="row mb-2 justify-content-end">
+                        <div class="col-6 col-md-6 col-lg-4">
+                            <div class="form-outline mb-2" style="display: none;">
+                                <input type="text" class="form-control"  value="" id="mid_id" name="mid" required>
+                                <label class="form-label" for="mid_id">MID</label>
+                            </div>
+                        </div>                    
+                        <div class="col-6 col-md-4 col-lg-4">
+                            <button type="submit" class="form-control bg-info" id="tasksubmitbtn">SUBMIT</button>
+                        </div>
+                    </div>
+                </div>  
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+
+$(document).ready( function () {
+    getData()
+});  
+function getData(){
+    $.ajax({
+        url: "{% url 'getTemplateData' %}",
+        type:'GET',
+        success: function(json) {
+            load_data(json.tasklist)
+        },
+        dataType: "json"
+    });
+}   
+function postData(data,url){
+    $.ajax({
+        url: url['url'],
+        type:'POST',
+        data:data,
+        success: function(json) {
+            if(json.projectType=="projects"){
+                load_data(json.tasklist)
+                $('#tabletask').show()
+                $('#nonprojectTableTask').hide()
+                $('#milestoneAddLink').hide()
+            }
+            else{
+                load_nonProjectData(json.tasklist)
+                $('#nonprojectTableTask').show()
+                $('#tabletask').hide()
+                $('#milestoneAddLink').show()
+            }
+        },
+        dataType: "json"
+    });
+}   
+
+// when dropdown change
+$("#projectTypeDropdown").on("change", function() {
+    var projectType = $(this).val()
+    postData({type:projectType},{url:"{% url 'getTemplateData' %}"})
+})
+
+// -----Others table
+function load_nonProjectData(response){
+    $('#nonprojectTableTask tr').not(function(){ return !!$(this).has('th').length; }).remove();
+    var k = '<tbody id = "_tbody" >'
+    if (response.length !=0){
+        $('#tabletask tr').not(function(){ return !!$(this).has('th').length; }).remove();
+        var temp = ""
+        $.each(response, function(i, val){
+            if(val['name']!=temp)
+            {
+                k+='<tr m_id='+val['id']+' class="milestone-row"><td><i class="fas fa-chevron-down me-2 toggle"></i></td><td class="row_data" col_name="milestonename">' + val['name'] + '</td>';
+                k+='<td><a style="color:rgb(9, 139, 172);" href="" data-bs-toggle="modal" data-bs-target="#Add_Task" class="addtask_model">+ Add Task</a></td><td><i class="fas fa-minus-circle text-warning delete_ ms-3"></i></td>';
+                k+='</tr>';
+                k+='<tr m_id='+val['id']+' t_id='+val['milestones__id']+'>';
+                k+='<td></td><td></td><td class="row_data" col_name="taskname">' + val['milestones__name'] + '</td><td><i class="fas fa-minus-circle text-warning delete_ ms-3"></i></td>';
+                k+='</tr>';
+            }
+            else{
+                k+='<tr m_id='+val['id']+' t_id='+val['milestones__id']+'>';
+                k+='<td></td><td></td>';
+                k+='<td class="row_data" col_name="taskname">' + val['milestones__name'] + '</td><td><i class="fas fa-minus-circle text-warning delete_ ms-3"></i></td>s';
+                k+='</tr>';
+            }
+            temp = val['name'];
+        });
+    }else{
+        k+='<tr><td colspan="4" class="text-center text-info text-uppercase">Milestone and tasks not found!!</td></tr>'
+    }
+    k+='</tbody>';
+    $('#nonprojectTableTask').append(k);
+}
+
+// -----Project table
+//edit tablerow
+$(document).on('click', '.row_data', function(e) {
+    e.preventDefault();
+
+    //make div editable
+    $(this).closest('td').attr('contenteditable', 'true');
+
+    $(this).focus();
+}); 
+
+$(document).on('keypress', '.row_data', function(event) 
+{
+    var tskid = $(this).closest('tr').attr('t_id');
+    var milstnid = $(this).closest('tr').attr('m_id');
+    var projectType = $('#projectTypeDropdown').val()
+    var row_div = $(this)
+
+    var col_name = row_div.attr('col_name'); 
+    var col_val = row_div.html().replace(/&nbsp;/g, "");
+    var arr_ = {};
+    arr_[col_name] = col_val.trim();
+    $.extend(arr_,{tskid:tskid},{milstnid:milstnid},{mode:"edit_table"},{type:projectType});
+    if(event.which==13){
+        postData(arr_,{url:"{% url 'getTemplateData' %}"})
+    }
+})
+
+// delete 
+$(document).on('click', '.delete_', function(e)
+{
+    if (confirm("Are you want to delete?")) {
+        var tskid = $(this).closest('tr').attr('t_id');
+        var milstnid = $(this).closest('tr').attr('m_id');
+        var projectType = $('#projectTypeDropdown').val()
+        if(tskid==undefined)
+        {
+            var arr_ = {};
+            $.extend(arr_,{milstnid:milstnid},{mode:"deletedata"},{type:projectType});
+            postData(arr_,{url:"{% url 'getTemplateData' %}"})
+        }
+        else
+        {
+            var arr_ = {};
+            $.extend(arr_,{tskid:tskid},{milstnid:milstnid},{mode:"deletedata"},{type:projectType});
+            postData(arr_,{url:"{% url 'getTemplateData' %}"})
+        }    
+    }
+})
+
+// add task model click
+$(document).on('click', '.addtask_model', function(){
+    var milestone_id = $(this).closest('tr').attr('m_id');
+    $('#mid_id').val(milestone_id);
+})
+
+//add milestone
+$(document).on('click', '#milestonesubmitbtn', function(e) {
+    event.preventDefault();
+    postData($("#milestoneform").serialize(),{url:"{% url 'Add-milestone' %}"})
+    $('.btn-close').click();
+})
+
+//add task
+$(document).on('click', '#tasksubmitbtn', function(e) {
+    event.preventDefault();
+    postData($("#taskform").serialize(),{url:"{% url 'Add-task' %}"})
+    $('.btn-close').click();
+})
+
+function load_data(response){
+    $('#tabletask tr').not(function(){ return !!$(this).has('th').length; }).remove();
+    var k = '<tbody id = "_tbody" >'
+    if (response.length !=0){
+        $('#tabletask tr').not(function(){ return !!$(this).has('th').length; }).remove();
+        var temp = ""
+        $.each(response, function(i, val){
+            if(val['milestone_name']!=temp)
+            {
+                k+='<tr class="milestone-row"><td><i class="fas fa-chevron-down me-2 toggle"></i></td><td>' + val['milestone_name'] + '</td><td></td>';
+                k+='</tr>';
+                k+='<tr>';
+                k+='<td></td><td></td><td col_name="taskname">' + val['name'] + '</td>';
+                k+='</tr>';
+            }
+            else{
+                k+='<tr>';
+                k+='<td></td><td></td>';
+                k+='<td col_name="taskname">' + val['name'] + '</td>';
+                k+='</tr>';
+            }
+            temp = val['milestone_name'];
+        });
+    }else{
+        k+='<tr><td colspan="4" class="text-center text-info text-uppercase">Milestone and tasks not found!!</td></tr>'
+    }
+    k+='</tbody>';
+    $('#tabletask').append(k);
+}
+
+// common toggling
+$('#tabletask , #nonprojectTableTask').on("click","tr .toggle",function() {
+    $(this).closest('tr').nextUntil('.milestone-row').toggle();
+    $(this).toggleClass('fa-chevron-right fa-chevron-down');
+});
+
+</script>
+{% endblock %}

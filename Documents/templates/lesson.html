@@ -1,0 +1,376 @@
+{% extends "topNav.html" %}
+{% block title %}Lesson {% endblock %} 
+{% block lesson_active %}active{% endblock %}
+{% block main-content %}
+
+<!--Lesson learnt table-->
+<div class="card ">
+    <div class="card-header">
+        <div class="justify-content-between row">
+            <div class="col-6 col-md-2 col-lg-5">
+                <i class="fas fa-table"></i> <strong>Lesson Learnt</strong>
+                <span class="me-4"><a href="" data-bs-toggle="modal" data-bs-target="#Add_lessonlernt" style="color:rgb(9, 139, 172); ;">+ Add Lessonlearnt</a> </span>
+                {% if user.role != 'Employee' %} 
+                <span class="me-4"><a href="" data-bs-toggle="modal" data-bs-target="#Add_category"style="color:rgb(9, 139, 172); ;">+ Add Category</a> </span>
+                {% endif %}
+                  </div>                                            
+            <div class="col-6 col-md-4 col-lg-6">
+                <form action="/documents/lesson/" method="POST">
+                    {% csrf_token %}
+                    <div class="row justify-content-end">
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-group border-lable-flt">
+                                <select class="form-control custom-select" id="Project" name="Project" style="height: 37px" required>
+                                    <option value="All_project">All Project</option>
+                                    {% for proj in project_ %}
+                                    <option value="{{proj.quotation__quotation_no}}">{{proj.quotation__quotation_no}}-{{proj.quotation__project__name}}</option>
+                                    {% endfor %}                                                          
+                                </select><span><i class="fas fa-filter"></i>Project</span>
+                            </label>
+                        </div>
+                        <!-- All category -->
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-group border-lable-flt">
+                                <select class="form-control custom-select" id="Category" name="Category" style="height: 37px" required>
+                                    <option value="All_category" >All Category</option>
+                                    {% for cat in category_ %}
+                                    <option value="{{cat.Category}}">{{cat.Category}}</option>
+                                    {% endfor %}                                                                                       
+                                </select><span><i class="fas fa-filter"></i>Category</span>
+                            </label>
+                        </div>   
+                        <div class="col-12 col-md-3 col-lg-3" >
+                            <button type="submit" class="form-control bg-info">SUBMIT</button> 
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <table class="datatable display compact cell-border" style="width: 100%;">
+            <thead>
+                <th>#</th>
+                <th>Project</th>
+                <th>Category</th>  
+                <th class="text-nowrap">Created By</th>
+                <th>Event</th>
+                <th>Limitations</th>
+                <th>Actions</th>                        
+                <th>Remarks</th>
+                <th>Status</th>
+                <th style="display: none;">ID</th>
+                <th><i class="fas fa-file-download"></i></th>
+                <th>Delete</th>
+                
+            </thead>
+            <tbody>          
+                {% for lessons in lesson_ %}                                              
+                <tr class ="row_view" data-bs-toggle="modal" data-bs-target="#Edit_lesson_Modal" >
+                    <td>{{forloop.counter}}</td>                           
+                    <td>{{lessons.Project}}</td>
+                    <td>{{lessons.Category}}</td>
+                    <td>{{lessons.Owner}}</td>
+                    <td>{{lessons.Event}}</td>            
+                    <td>{{lessons.Limitations}}</td>
+                    <td>{{lessons.Actions}}</td>                           
+                    <td>{{lessons.Remark}}</td>
+                    <td>{{lessons.Status}}</td>
+                    <td style="display: none;">{{lessons.id}}</td>
+                    {% if lessons.file_lesson.url != None %}
+                    <td><a href="{{lessons.file_lesson.url}}" download =""><i class="fa fa-download"></i></a></td>
+                    {% else %}
+                    <td>No Attachment</td>
+                    {% endif %}                                                      
+                    <td align="center"><a href="/documents/delete-lesson/{{lessons.id}}" onclick="return confirm('Delete {{lessons.Project}} ? ')"><i class="fa fa-trash" style="color: red;" aria-hidden="true"></i></a></td> 
+                </tr>  
+                {% endfor %}                                                      
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!--Model for update  LessonLearnt-->
+<div class="modal fade" id="Edit_lesson_Modal" tabindex="-1" aria-labelledby="Edit_lesson_Modal" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header ">
+                <h5 class="modal-title" id="exampleModalLabel" >View Lesson Learnt</h5>
+                <button type="button" class="btn-close text-light" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/documents/edit-lesson/" method="POST">
+                    {% csrf_token %}
+                    <h5 class="mt-0.75 mb-2">Basic Details</h5>
+                    <!--project,category,status-->
+                    <div class="justify-content-around row mb-2">
+                        <div class="col-13 col-md-4 col-lg-4">
+                            <div class="form-outline mb-4">
+                                <input type="text" class="form-control" id="p_name" name="Project" value="" >
+                                <label class="form-label" for="p_name">Project</label>
+                            </div>
+                        </div>
+                        <div class="col-13 col-md-4 col-lg-4">
+                            <div class="form-outline mb-4">
+                                <input type="text" class="form-control" id="cat" name="Category" value=""  >
+                                <label class="form-label" for="cat">Category</label>
+                            </div>
+                        </div>
+                        <div class="col-13 col-md-4 col-lg-4">
+                            <div class="form-outline">
+                                <input type="text" class="form-control" id="status" name="Status" value=""  >
+                                <label class="form-label" for="status">Status</label>
+                            </div>                        
+                        </div>     
+                    </div>
+                    <hr>
+                    <h5 class="mt-1 mb-1.5">Details</h5>
+                    <div class="justify-content-around row mb-3">                         
+                        <div class="col-12 col-md-6 col-lg-6">
+                            <div class="form-outline mb-4">
+                                <textarea class="form-control"  id="event" name="Event" rows="8" cols="10" ></textarea>
+                                <label class="form-label" for="Event">Event (What happend)</label>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-6">
+                            <div class="form-outline mb-2">
+                                <textarea class="form-control"  id="limit" name="Limitations" rows="8" cols="10" ></textarea>
+                                <label class="form-label" for="limit">Limitations</label>
+                            </div>
+                        </div>
+                    </div> 
+                     <div class="justify-content-around row">
+                        <div class="col-12 col-md-12 col-lg-12">
+                            <div class="form-outline mb-4">
+                                <textarea class="form-control"  id="action" name="Actions" rows="8" cols="20" ></textarea>
+                                <label class="form-label" for="action">Actions</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="justify-content-around row">
+                        <div class="col-12 col-md-12 col-lg-12">
+                            <div class="form-outline">
+                                <textarea class="form-control"  id="remark" name="Remark" rows="1" cols="5" ></textarea>
+                                <label class="form-label" for="remark">Remarks</label>
+                            </div>
+                        </div>  
+                    </div> 
+                    <div class="row justify-content-end mt-2 mb-3">
+                        <div class="col-2">
+                            <input type="text" class="form-control" id="l_id" name="id" value=""  style="display: none;">
+                            <button type="submit" class="form-control bg-info">UPDATE</button>
+                        </div>
+                    </div>                            
+                </form>
+            </div>            
+        </div>
+    </div>
+</div>
+
+<!--Model for Category-->
+<div class="modal fade" id="Add_category" tabindex="-1" aria-labelledby="Add_category" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Category</h5>
+                <button type="button" class="btn-close text-light" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="card-header">
+                            <form action="/documents/category/" method="POST">
+                                {% csrf_token %}
+                                <div class="justify-content-between row">
+                                        <div class="col-sm-8 col-md-8 col-lg-9">
+                                            <div class="form-outline">
+                                                <input type="text" class="form-control" id="Category" name="Category" required>
+                                                <label class="form-label" for="Category">Category</label>
+                                            </div>
+                                        </div>
+                                            <div class="col-sm-4 col-md-4 col-lg-3">
+                                            <button type="submit"class="form-control bg-info">SUBMIT</button>
+                                        </div>
+                                    </div>
+                            </form>
+                    </div>
+                <div class="card-body">
+                    <table class="table table-striped table-responsive table-sm m-0" style="width: 100%;">
+                        <thead>
+                            <th>Category</th>
+                            <th>Delete</th>
+                        </thead>
+                        <tbody>          
+                            {% for cat in category_ %}                                              
+                            <tr>
+                                <td>{{cat.Category}}</td>
+                                <td style="width: 20%;"><a href="/documents/delete-category/{{cat.id}}" onclick="return confirm('Delete {{cat.Category}} ? ')"><i class="fa fa-trash" style="color: red;" aria-hidden="true"></i></a></td>  
+                            </tr>  
+                            {% endfor %}                                                      
+                        </tbody>
+                    </table>
+                </div>
+        	</div>
+        </div>
+    </div>
+</div>
+
+<!--Model for Add lessonlernt-->
+<div class="modal fade" id="Add_lessonlernt" tabindex="-1" aria-labelledby="Add_lessonlernt" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Lesson Learnt</h5>
+                <button type="button" class="btn-close text-light" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/documents/lessonlearnt/" enctype="multipart/form-data" method="POST">
+                    {% csrf_token %}
+                    <h5 class="mt-0.75 mb-2">Basic Details</h5>
+                    <!-- project,Category,Owner -->
+                    <div class="row mb-4">
+                        <!-- Project -->
+                        <div class="col-12 col-md-3 col-lg-4">
+                            <label class="form-group border-lable-flt">
+                                <select class="form-control custom-select" id="Project" name="Project" style="height: 37px" required>
+                                    <option value="" selected disabled>All Project</option>
+                                    {% for proj in project_ %}
+                                    <option value="{{proj.quotation__quotation_no}}">{{proj.quotation__quotation_no}}  {{proj.quotation__project__name|default:""}}</option>
+                                    {% endfor %}                                                           
+                                </select><span>Project</span>
+                            </label>
+                        </div>
+        
+                        <!-- Category -->
+                        <div class="col-12 col-md-3 col-lg-4">
+                            <label class="form-group border-lable-flt">
+                                <select class="form-control custom-select" id="Category" name="Category" style="height: 37px" required>
+                                    <option value="" selected disabled>Select Category</option>
+                                    {% for cat in category_ %}
+                                    <option value="{{cat.Category}}">{{cat.Category}}</option>
+                                    {% endfor %}                                                            
+                                </select><span>Category</span>
+                            </label>
+                        </div>
+        
+                        <!-- Owner -->                
+                        <div class="col-12 col-md-3 col-lg-4">
+                            <label class="form-group border-lable-flt">
+                                <select class="form-control custom-select" id="Status" name="Status" style="height: 37px" required>
+                                    <option  selected disabled value="">Select Status</option>
+                                    <option value="New">New</option>
+                                    <option value="In-Progress">In-Progress</option>
+                                    <option value="Hold">Hold</option>
+                                    <option value="Completed">Completed</option>                                                                                                                     
+                                </select><span>Status</span>
+                            </label>
+                        </div> 
+        
+                        <!-- Created By -->
+                        <div class="col-12 col-md-3 col-lg-3" style="display: none;">
+                            <div class="form-outline">                       
+                                <input type="text" class="form-control" id="Owner" name="Owner" required value="{{request.user.first_name}}" readonly>
+                                <label class="form-label" for="Owner">Created By</label>
+                            </div>
+                        </div>  
+                    </div>
+                    
+                    <hr>
+                    <h5 class="mt-1 mb-1.5">Details</h5>
+                    <!-- Event,Limitations/Recommendations,Actions -->
+                    <div class="row mb-3">
+                        <!-- Event -->
+                        <div class="col-12 col-md-4 col-lg-4">
+                            <div class="form-outline mb-3">
+                                <textarea class="form-control"  id="Event" name="Event" rows="7" cols="10" required></textarea>
+                                <label class="form-label" for="Event">Event (What happend)</label>
+                            </div>
+                        </div>
+        
+                        <!-- Limitations -->
+                        <div class="col-12 col-md-4 col-lg-4">
+                            <div class="form-outline mb-3">
+                                <textarea class="form-control"  id="Limitations" name="Limitations" rows="7" cols="10" required></textarea>
+                                <label class="form-label" for="Limitations">Limitations/Recommendations</label>
+                            </div>
+                        </div>                             
+                   
+                      <!-- Actions -->                           
+                        <div class="col-12 col-md-4 col-lg-4">
+                            <div class="form-outline mb-2">
+                                <textarea class="form-control"  id="Actions" name="Actions" rows="7" cols="10" required></textarea>
+                                <label class="form-label" for="Actions">Actions</label>
+                                
+                            </div> 
+                        </div> 
+                        <div class="form-outline mb-3">
+                            <input type="file" name="file_lesson" accept=".doc, .docx, .pdf, .txt">
+                            
+                        </div>         
+                    </div>
+        
+                    <hr>      
+                    <h5 class="mt-1.5 mb-1.5">Additional Details</h5>
+                    <!-- Remarks -->
+                    <div class="row mb-2"> 
+                            <!-- Remark  -->
+                        <div class="col-12 col-md-12 col-lg-12">
+                            <div class="form-outline mb-2">
+                                <textarea class="form-control"  id="Remark" name="Remark" rows="1" cols="10" required></textarea>
+                                <label class="form-label" for="Remark">Remarks</label>
+                            </div>
+                        </div>                                            
+                     </div> 
+                    <div class="row justify-content-end mt-2 mb-3">
+                        <div class="col-2">
+                            <button type="submit" class="form-control bg-info">SUBMIT</button>
+                            
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- datatable script -->
+<script>
+    $(document).ready(function() {
+        var scrollYValue = '67.7dvh'; // Default scroll value
+        // Check screen width
+        if ($(window).width() <= 1366) {
+            scrollYValue = '65.7dvh'; // Change scroll value when screen width is 1300px or less
+        }
+        var table =$('.datatable').DataTable( {
+            dom: 'Bfrtip',
+            ordering : false,
+            lengthMenu: [200,100,50,25,10],
+            scrollX: false,
+            scrollCollapse: true,
+            scrollY: scrollYValue,
+            responsive:true,
+            buttons: [
+                'excel'
+            ],
+            select: true,
+        } );
+        table.on('click','tr',function(){
+            $('#l_id').val(table.row($(this).closest('tr')).data()[9]);
+            $('#p_name').val(table.row($(this).closest('tr')).data()[1]);
+            $('#cat').val(table.row($(this).closest('tr')).data()[2]);
+            $('#status').val(table.row($(this).closest('tr')).data()[8]);
+            $('#event').val(table.row($(this).closest('tr')).data()[4]);
+            $('#limit').val(table.row($(this).closest('tr')).data()[5]);
+            $('#action').val(table.row($(this).closest('tr')).data()[6]);
+            $('#remark').val(table.row($(this).closest('tr')).data()[7]);
+        } );
+
+        $('.row_view').click(function(){
+       });
+    });
+</script>
+<script>
+    if ( window.history.replaceState ) {
+      window.history.replaceState( null, null, window.location.href );
+    }
+
+</script>
+{% endblock %}      

@@ -1,0 +1,332 @@
+{% extends "topNav.html" %} {% block title %}Employee Details{% endblock %} 
+
+{% block employees_active %}active{% endblock %}
+
+{% block main-content %}
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-table"></i> <strong>Employee Details</strong> <span>{{EmployeeForm.errors}}{{EmployeeForm.messages}}</span>
+            <span style="float: right;"><a href="" class="addUser text-info"><i class="fas fa-plus-circle ms-2 " ></i> Employee</a>
+                <input type="checkbox" class="ms-2 form-check-input" onchange="onChange(this)" name="active" id="isActive" checked>Active</span>
+        </div>          
+    <div class="card-body">
+        <table id ='userTable' class="dataTable display nowrap compact cell-border" style="width: 100%;">
+            <thead>
+                <th>id</th>
+                <th>Name</th>
+                <th>Username</th>
+                <th>Designation</th>
+                <th>Role</th>
+                <th>Email</th>
+                <th>Mobile </th>
+                <th>Reporter Name </th>
+                <th>reporting_to</th>
+            </thead>
+        </table>
+    </div>
+</div>
+
+<!--  Add  Edit Employee Modal  /employee/signup/-->
+<div class="modal fade" id="Employee_Modal" tabindex="-1" aria-labelledby="Employee_Modal" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userAddOrEditModelHeading" >Add Employee</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>    
+            <div class="modal-body">
+                <form id="employee_form" action="" method="POST" autocomplete="off">
+                    {% csrf_token %}
+                    <!--Emp_name,Emp_ID-->
+                    <div class="justify-content-around row mb-3">                       
+                        <div class="col-6 col-md-6 col-lg-6 ">
+                            <div class="form-outline">
+                                <input type="text" class="form-control" id="first_name" name="first_name"  required>
+                                <label class="form-label" for="first_name">Employee Name</label>
+                            </div>
+                        </div>
+                        <div class="col-5 col-md-5 col-lg-5">
+                            <div class="form-outline">
+                                <input type="text" class="form-control" id="username" name="username" required>
+                                <label class="form-label" for="username">EID/User name</label>
+                            </div>
+                        </div>
+                        <div class="col-1 col-md-1 col-lg-1">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"  id="is_active"  name="is_active" checked>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Email,MOB -->
+                    <div class="justify-content-around row mb-3">                       
+                        <div class="col-6 col-md-6 col-lg-6 ">
+                            <div class="form-outline">
+                                <input type="text" class="form-control" id="email" name="email" required>
+                                <label class="form-label" for="email">Email</label>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-6 col-lg-6 ">
+                            <div class="form-outline">
+                                <input type="number" class="form-control" id="phone"  name="phone" required>
+                                <label class="form-label" for="phone">MOB:</label>
+                            </div>
+                        </div>
+                    </div>  
+                    <!--Role,Reporter name-->
+                    <div class="justify-content-around row mb-3">                            
+                        <div class="col-6 col-md-6 col-lg-6 ">
+                            <label class="form-group border-lable-flt">
+                                <select class="form-control" id="reporting_to" name="reporting_to"  required>
+                                </select><span>Reporter Name</span>
+                            </label>
+                        </div>    
+                        <div class="col-6 col-md-6 col-lg-6 ">
+                            <label class="form-group border-lable-flt">
+                                <select class="form-control " name="role" id="role" required>
+                                    <option value="Employee" >Employee</option>
+                                    <option value="Lead">Lead</option>
+                                    <option value="Manager">Manager</option>
+                                    <option value="HR">HR</option>
+                                    <option value="Consultant">Consultant</option>
+                                    <option value="CEO">CEO</option>
+                                </select><span>Role</span>
+                            </label>
+                        </div>                
+                    </div>
+                    <!-- password,confirm_password -->
+                    <div class="justify-content-around row mb-3" id="div_password">
+                        <div class="col-6 col-md-6 col-lg-6">
+                            <div class="form-outline mb-3">
+                                <input type="password" class="form-control" id="password1" name="password1" autocomplete="off" >
+                                <label class="form-label" for="password1">Password</label>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-6 col-lg-6 ">
+                            <div class="form-outline">
+                                <input type="password" class="form-control" id="password2" name="password2" >
+                                <label class="form-label" for="password2">Confirm Password</label>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- designation -->
+                    <div class="justify-content-around row mb-3">                         
+                        <div class="form-outline">
+                            <div class="form-outline">
+                                <input type="text" class="form-control" id="designation" name="designation" required>
+                                <label class="form-label" for="designation">Designation</label>
+                            </div>
+                        </div>             
+                    </div>
+                    <!-- submit button  -->
+                    <div class="justify-content-center row mb-3" id="submit_row">
+                        <div class="col-4 col-md-4 col-lg-4 " >
+                            <button type="submit" class="submit form-control btn btn-info btn-sm" >SUBMIT</button> 
+                        </div>
+                    </div>
+                </form>
+            </div>            
+        </div>
+    </div>
+</div>
+<!-- common modals -->
+{% include 'notifications.html' %}
+
+<script type="text/javascript">
+    $(document).ready( function (e) {
+        $.ajax({
+            type:"GET",
+            url:"{% url 'getUsers'%}",
+            dataType:"json",
+            success:function(response){
+            loadDatatable(response.users)
+            }
+        });
+        $('#userTable').on('dblclick','tr',function(e){
+            e.preventDefault();
+            var dataRow = $('#userTable').DataTable().row($(this).closest('tr')).data();
+            $('#userAddOrEditModelHeading').html("Edit/Delete Employee");
+            $('#first_name').val(dataRow.first_name);
+            $('#role').val(dataRow.role);
+            $('#reporting_to').val(dataRow.reporting_to);
+            $('#email').val(dataRow.email);
+            $('#phone').val(dataRow.phone);
+            $('#username').val(dataRow.username);
+            $('#password1').prop('required',false); 
+            $('#password2').prop('required',false); 
+            $('#designation').val(dataRow.designation);
+            $('#is_active').prop('checked', dataRow.is_active ? true:false);
+            document.getElementById('div_password').style ="display: none;";
+
+            if ( ! document.contains(document.getElementById("delete_col"))) {
+                const div = document.createElement('div');
+                // div.className = 'col-4 col-md-4 col-lg-4';
+                div.id="delete_col"
+                div.innerHTML = `
+                    <input style="display: none;" id="id" name="id" value ="" type="text">
+                `;
+                // <button class ="form-control btn btn-danger btn-sm" onclick="onDelete()">DELETE</button>
+                
+                document.getElementById('submit_row').appendChild(div);
+                $('#id').val(dataRow.id);
+            }                
+            $('#Employee_Modal').modal('show');
+        });
+    });  
+    var scrollYValue = '69dvh'; // Default scroll value
+    // Check screen width
+    if ($(window).width() <= 1366) {
+        scrollYValue = '65dvh'; // Change scroll value when screen width is 1300px or less
+    }
+    function loadDatatable(userData){
+        var table = $('#userTable').DataTable({
+            data:userData,
+            columns: [
+                {data: 'id'},
+                {data: 'first_name'}, 
+                {data: 'username'},
+                {data: 'designation'},
+                {data: 'role'},
+                {data: 'email'},
+                {data: 'phone'},
+                {data: 'reporter_name'},
+                {data: 'reporting_to'}
+            ],
+            order: [[1, 'asc']],
+            dom: 'Bfrtip',
+            buttons: ['excel'],
+            lengthMenu: [200,100,50,25,10],
+            scrollCollapse: true,
+            scrollY: scrollYValue,
+            responsive:true,
+            columnDefs:[{ className : "text-center",targets:[2]},{ className : "hide_column",targets:[0,8]}],
+            destroy: true,
+            });
+            var options = ''; 
+            $(userData).each(function(index, value){
+                options += '<option value ='+value['id']+'>'+value['first_name']+'</option>'; //add the option element as a string
+            });
+            $('#reporting_to').html(options);
+            
+        }   
+
+    function onChange(e) {
+        $.ajax({
+            type:"POST",
+            url:"{% url 'getUsers'%}",
+            data :{"checked":e.checked},
+            headers:{'X-CSRFToken':'{% csrf_token %}'},
+            success:function(response){
+                loadDatatable(response.users) 
+            }
+        })
+    } 
+</script>
+
+<script>
+    $('.addUser').click(function(e){
+        e.preventDefault();
+        $('#first_name').val("");
+        $('#role').val("");
+        $('#email').val("");
+        $('#phone').val("");
+        $('#reporting_to').val("");
+        $('#username').val("");
+        $('#password1').prop('required',true); 
+        $('#password2').prop('required',true);
+        $('#designation').val(""); 
+        $('#is_active').prop('checked',true);
+        $('#userAddOrEditModelHeading').html("Add Employee");
+        $('#Employee_Modal').modal('show');
+        document.getElementById('role').selectedIndex = 0;
+        document.getElementById('reporting_to').selectedIndex = 0;
+    }) 
+</script>
+
+<script>
+    $('.submit').click(function (e) {
+        e.preventDefault();
+        if ( document.contains(document.getElementById("delete_col"))) {
+            $.ajax({
+                type:"POST",
+                url:"{% url 'edit-employee' %}",
+                data :$('#employee_form').serialize(),
+                dataType:"json",
+                headers:{'X-CSRFToken':'{% csrf_token %}'},
+                success:function(response){
+                    if (response.formError) {
+                        alert(response.formError)
+                    } else {
+                        loadDatatable(response.users) ;
+                        var message ="User succesfully Updated......!"
+                        $('#successText').text(message)
+                        $('#successModal').modal('show')
+                        $(".btn-close").click();
+                    }
+                },
+                error: function(textStatus) {
+                    alert(textStatus);
+                }
+            })
+        }
+        else{
+            $.ajax({
+                type:"POST",
+                url:"{% url 'signup' %}",
+                data :$('#employee_form').serialize(),
+                dataType:"json",
+                headers:{'X-CSRFToken':'{% csrf_token %}'},
+                success:function(response){
+                    if (response.formError) {
+                        alert(response.formError)
+                    } else {
+                        loadDatatable(response.users);
+                        var message = "User succesfully added......!"
+                        $('#successText').text(message)
+                        $('#successModal').modal('show')
+                        $(".btn-close").click();
+                    }
+                },
+                error: function(textStatus) {
+                    alert(textStatus);
+                }
+            })
+        }
+    });
+</script>
+
+<script>
+    $(".btn-close").click(function(e){
+        e.preventDefault();
+        document.getElementById('div_password').style ="display: true;";
+        if (document.contains(document.getElementById("delete_col"))) {
+            document.getElementById('delete_col').remove();
+        }
+        $('#isActive').prop('checked',true);
+        $("#Employee_Modal").modal('hide');
+       
+    });
+</script>
+<script>  
+    function onDelete(){
+        if (confirm("Are you sure to delete?")) {
+            $.ajax({
+                type:"POST",
+                url:"{% url 'delete-employee'%}",
+                data :$('#employee_form').serialize(),
+                headers:{'X-CSRFToken':'{% csrf_token %}'},
+                success:function(response){
+                    loadDatatable(response.users) 
+                    $(".btn-close").click();
+                },
+                error: function(textStatus) {
+                    alert(textStatus);
+                }
+            })
+        }
+    }
+    // Modal close
+    $('.cancelButton').on("click",function() {
+        $('#successModal').modal('hide');
+    })
+</script>
+{% endblock %} 

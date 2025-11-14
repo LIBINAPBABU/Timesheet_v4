@@ -1,0 +1,209 @@
+{% extends "topNav.html" %} {% block title %}Usermanagement Settings{% endblock %} 
+
+{% block userManagementSettings_active %}active{% endblock %}
+
+{% block main-content %}
+
+<div class="card">
+    <div class="card-header d-flex flex-row justify-content-between align-items-center">
+        <div class="d-flex justify-content-center align-items-center gap-4">
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="Radiogroup" id="groupRadioButton" checked>
+                <label class="form-check-label" for="groupRadioButton">
+                    Group
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="Radiogroup" id="roleRadioButton">
+                <label class="form-check-label" for="roleRadioButton">
+                    Role
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="Radiogroup" id="ModuleRadioButton">
+                <label class="form-check-label" for="ModuleRadioButton">
+                    Module
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="Radiogroup" id="pageRadioButton">
+                <label class="form-check-label" for="pageRadioButton">
+                    Page
+                </label>
+            </div>
+        </div>
+        <div>
+            <label class="form-label text-info" id="addnew">+add new</label>
+        </div>
+    </div>
+    <div class="card-body">
+        <table class="table table-striped table-sm">
+           <!-- table content -->
+        </table>
+    </div>
+</div>
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModal" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"></h5>
+                <button type="button" class="btn-close cancelButton" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input name="id" id="recordId" class="d-none" />   
+                <div>
+                    <div>
+                        <div class="form-outline my-2">
+                            <input type="text" class="form-control" id="namefield" name="name" required>
+                            <label class="form-label" for="name">Name</label>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items" >
+                        <label class="form-group border-lable-flt col-12" id="moduleSelectDiv">
+                            <select class="form-control" id="moduleSelect">
+                            </select><span>Select Module</span>
+                        </label>
+                    </div>
+                    <div>
+                        <div class="form-outline my-2" id="pagediv">
+                            <input type="text" class="form-control" id="pageurl" name="pageurl" required >
+                            <label class="form-label" for="pageurl">Page URL</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row justify-content-end">
+                    <div class="col-sm-4 col-md-4 col-lg-4">
+                        <button type="submit" class="form-control bg-info" id="editSubmit" >SUBMIT</button>
+                    </div>
+                </div>
+            </div>            
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready( function () {
+        $('#moduleSelectDiv').hide()
+        $('#pagediv').hide()
+        getData()
+    }); 
+    var selectedRadio = 'groupRadioButton'
+    function getData(){
+        $.ajax({
+            url: "{% url 'getUserManagementData' %}",
+            type:'GET',
+            success: function(json) {
+                load_data(json.tableData)
+                $.each(json.module_list,function (key, value) {
+                    $('#moduleSelect').append($('<option>', {
+                        value: value['id'],
+                        text: value['name']
+                    }));
+                });
+            },
+            dataType: "json"
+        });
+    }  
+    
+    function postData(data){
+        $.ajax({
+            url: "{% url 'getUserManagementData' %}",
+            type:'POST',
+            data:data,
+            success: function(json){
+                load_data(json.tableData)
+            },
+            dataType: "json"
+        });
+    }
+   
+    $('input[name="Radiogroup"]').change(function () {
+        const selected = $(this).attr('id');
+        selectedRadio = selected
+        $('#'+selected+'').prop('checked', true);
+
+        if (selectedRadio === "pageRadioButton") {
+            $('#moduleSelectDiv').show();
+            $('#pagediv').show();
+        } else {
+            $('#moduleSelectDiv').hide();
+            $('#pagediv').hide();
+        }
+
+        postData({"selectedRadioId":selected})
+    }) 
+
+    function load_data(response){
+        $('.table').empty();
+        var k='<thead>'
+        k+='<th>Name</th>'
+        if (selectedRadio == "pageRadioButton"){
+            k+='<th>Module Name</th>'
+            k+='<th>Page URL</th>'
+        }
+        k+='<th>Edit</th>'
+        k+='<th>Delete</th>'
+        k+='</thead>'
+        k+='<tbody>'
+        $.each(response, function(i, val){
+            k += '<tr rowId='+val['id']+' '+(val['module__id'] ? ' moduleId= '+val['module__id']+' ' : '') + '><td class="name">'+val['name']+'</td>'
+            if (val['module__name']){
+                k += '<td class="moduleName">'+val['module__name']+'</td>'
+                k += '<td class="pageurl">'+val['pageURL']+'</td>'
+            }
+            k += '<td><i class="bi bi-pencil-square editRow"></i></td>'
+            k += '<td><i class="bi bi-x-lg deleteRow"></i></td></tr>'
+        })
+        k += '</tbody>'
+        $('.table').append(k);
+    }
+
+    // Insert Row
+    $(document).on('click', '#addnew', function()  {
+        $('#recordId').val('')
+        $('#namefield').val('');
+        $('#moduleSelect').val(1);
+        $('#pageurl').val('');
+        $('#editModal').modal('show');
+    })
+
+    // editRow
+    $(document).on('click', '.editRow', function()  {
+        var rowId = $(this).closest('tr').attr('rowId')
+        var moduleId = $(this).closest('tr').attr('moduleId')
+        var name = $(this).closest('tr').find('.name').text().trim();
+        var moduleName = $(this).closest('tr').find('.moduleName').text().trim();
+        var pageurl = $(this).closest('tr').find('.pageurl').text().trim();
+        $('#recordId').val(rowId)
+        $('#namefield').val(name);
+        $('#moduleSelect').val(moduleId);
+        $('#pageurl').val(pageurl);
+        $('#editModal').modal('show');
+    })
+
+    // editmodel submit
+    $(document).on('click', '#editSubmit', function()  {
+        var rowId = $('#recordId').val()
+        var name = $('#namefield').val()
+        var module = $('#moduleSelect').val()
+        var pageurl = $('#pageurl').val()
+        postParameteres = {"selectedRadioId":selectedRadio,"id":rowId,"name":name,"mode":"edit"}
+        if(module){
+            postParameteres['moduleId'] = module
+            postParameteres['pageurl'] = pageurl
+        }
+        postData(postParameteres)
+        $('#editModal').modal('hide');
+    })
+
+    // DeleteRow
+    $(document).on('click', '.deleteRow', function()  {
+        var rowId = $(this).closest('tr').attr('rowId')
+        postData({"selectedRadioId":selectedRadio,"id":rowId,"mode":"delete"})
+    })
+
+    //Common modal close
+    $('.cancelButton').on("click",function() {
+        $('#editModal').modal('hide');
+    })
+</script>
+{% endblock %} 

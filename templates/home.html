@@ -1,0 +1,242 @@
+{% extends "topNav.html" %} {% block title %}Home{% endblock %} 
+{% block home_active %}active{% endblock %}
+{% load static %}
+{% block main-content %}
+{% block Head %}
+
+<style>
+    .card-body
+    {
+        display:flex;
+        justify-content: center;
+        align-items: center;
+    }
+    /* i.bi  */
+    .card-nav
+    {
+        font-size: 25px;
+        padding-top: 14dvh;
+        /* padding: auto; */
+    }
+    .card-text
+    {
+        display:flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .card img
+    {
+        height:21dvh;
+    }
+    @media (max-width: 1366px) {
+        .card
+        {
+            width: 250px;
+        }
+        .card-nav
+        {
+            font-size: 20px;
+            padding-top: 13dvh;
+            /* padding: auto; */
+        }
+    }
+</style>
+{% endblock %}
+
+<div class="container card-nav">
+    <div class="row justify-content-center">
+        <!-- <div class="card m-4 col-lg-3 col-md-6 col-sm-10" onclick="timesheetNavigatefun()"> -->
+        <!-- <div class="card m-4 col-lg-3 col-md-6 col-sm-10" onclick="Navigation('/timeline/submission','Timesheet')"> -->
+        <div class="card m-4 col-lg-3 col-md-6 col-sm-10" onclick="Navigation('Timesheet')">
+            <img class="card-img-top" src="{% static '/images/timesheet.jpg'%}" alt="Card image cap">
+            <div class="card-body py-1">
+                <p class="card-text"><i class="bi bi-clock me-1"></i>Timesheet</p>
+            </div>
+        </div>
+        <!-- <div class="card m-4 col-lg-3 col-md-6 col-sm-10" onclick="projectsNavigatefun('/projects/getProjectDetails')"> -->
+        <!-- <div class="card m-4 col-lg-3 col-md-6 col-sm-10" onclick="Navigation('/projects/getProjectDetails','Projects')"> -->
+        <div class="card m-4 col-lg-3 col-md-6 col-sm-10" onclick="Navigation('Projects')">
+            <img class="card-img-top" src="{% static '/images/PMO.jpg'%}" alt="Card image cap">
+            <div class="card-body py-1 ">
+                <p class="card-text"><i class="bi bi-list-task me-1"></i> Project</p>
+            </div>
+        </div>
+        <!-- <div class="card m-4 col-lg-3 col-md-6 col-sm-10" onclick="analysisNavigatefun()"> -->
+        <!-- <div class="card m-4 col-lg-3 col-md-6 col-sm-10" onclick="Navigation('/analysis/timesheet_analysis','Analysis')"> -->
+        <div class="card m-4 col-lg-3 col-md-6 col-sm-10" onclick="Navigation('Analysis')">
+            <img class="card-img-top" src="{% static '/images/data-analysis.jpg'%}" alt="Card image cap">
+            <div class="card-body py-1">
+                <p class="card-text"><i class="bi bi-bar-chart me-1"></i>Analysis</p>
+            </div>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <!-- <div class="card m-4 col-lg-3 col-md-6 col-sm-10" onclick="documentNavigatefun('/documents/Documents')"> -->
+        <!-- <div class="card m-4 col-lg-3 col-md-6 col-sm-10" onclick="Navigation('/documents/Documents','Document')"> -->
+        <div class="card m-4 col-lg-3 col-md-6 col-sm-10" onclick="Navigation('Document')">
+            <img class="card-img-top" src="{% static '/images/Documement.png'%}" alt="Card image cap">
+            <div class="card-body py-1" >
+                <p class="card-text"><i class="bi bi-file-earmark-richtext me-1"></i>Document</p>
+            </div>
+        </div>
+        <!-- <div class="card m-4 col-lg-3 col-md-6 col-sm-10" onclick="userNavigatefun('/employee/employee-details')"> -->
+        <!-- <div class="card m-4 col-lg-3 col-md-6 col-sm-10" onclick="Navigation('/employee/employee-details','User')"> -->
+        <div class="card m-4 col-lg-3 col-md-6 col-sm-10" onclick="Navigation('User')">
+            <img class="card-img-bottom pt-3" src="{% static 'images/Designation.png' %}" alt="Card image cap">
+            <div class="card-body py-1">
+                <p class="card-text"><i class="bi bi-person me-1"></i>User</p>
+            </div>
+        </div>
+        <!-- <div class="card m-4 col-lg-3 col-md-6 col-sm-10" onclick="settingsNavigatefun('/settings/list-templates')"> -->
+        <!-- <div class="card m-4 col-lg-3 col-md-6 col-sm-10" onclick="Navigation('/settings/list-templates','Settings')"> -->
+        <div class="card m-4 col-lg-3 col-md-6 col-sm-10" onclick="Navigation('Settings')">
+            <img class="card-img-top " src="{% static '/images/settings.jpg'%}" alt="Card image cap">
+            <div class="card-body py-1" >
+                <p class="card-text"><i class="bi bi-gear me-1"></i>Settings</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- common modals -->
+{% include 'notifications.html' %}
+
+<script>
+    // $(document).ready( function () {
+    //    console.log("")
+    // });
+
+    // //var moduleList
+    function postData(data){
+        return new Promise(function(resolve, reject) {
+            $.ajax({
+                url:"{% url 'getpermissionList' %}",
+                type:'POST',
+                data:data,
+                success:function(json){
+                    // moduleList = json.pageData
+                    resolve(json);
+                },
+                error: function(xhr, status, error) {
+                    reject(error);
+                }
+            });
+        });
+    } 
+
+    async function Navigation(moduleName)
+    {
+        const result = await postData({"moduleName":moduleName})
+        if(result.pageData.length > 0 && result.pageData[0]["page__pageURL"]){
+            const url = result.pageData[0]["page__pageURL"];
+            location.href = url
+        }
+        else{
+            var message ="Sorry You are not authorized!.."
+            $('#infoText').text(message)
+            $('#infoModal').modal('show')
+        }
+    }
+
+    // function Navigation(url,module)
+    // {
+        // postData()
+        // if (moduleList.includes(module))
+        // {
+            // location.href = url
+        // }
+        // else
+        // {
+        //     var message ="Sorry You are not authorized!.."
+        //     $('#infoText').text(message)
+        //     $('#infoModal').modal('show')
+        // }
+    // }
+    
+    // // when click usercard
+    // function userNavigatefun(url)
+    // { 
+    //     // "{{request.user.role}}" == 'Admin' || "{{request.user.role}}" == 'HR'
+    //     if(["HR", "Admin"].includes("{{ request.user.role }}"))
+    //     {
+    //         location.href = url
+    //     }
+    //     else
+    //     {
+    //         var message ="Sorry You are not authorized!.."
+    //         $('#infoText').text(message)
+    //         $('#infoModal').modal('show')
+    //     }
+    // }
+
+    // // when click settingscard
+    // function settingsNavigatefun(url)
+    // { 
+    //     // if(["Admin","Lead","Manager","CEO"].includes("{{ request.user.role }}"))
+    //     if("{{request.user.role}}" == 'Admin')
+    //     {
+    //         location.href = url
+    //     }
+    //     else
+    //     {
+    //         var message ="Sorry You are not authorized!.."
+    //         $('#infoText').text(message)
+    //         $('#infoModal').modal('show')
+    //     }
+    // }
+
+    // // when click projects card
+    // function projectsNavigatefun(url)
+    // { 
+    //     // if(["Admin","Lead","Manager","CEO"].includes("{{ request.user.role }}"))
+    //     // // if("{{request.user.role}}" == 'Admin' || "{{request.user.role}}" == 'Manager' || "{{request.user.role}}" == 'Lead')
+    //     // {
+    //         location.href = url
+    //     // }
+    //     // else
+    //     // {
+    //     //     var message ="Sorry You are not authorized!.."
+    //     //     $('#infoText').text(message)
+    //     //     $('#infoModal').modal('show')
+    //     // }
+    // }
+
+    // // when click document card
+    // function documentNavigatefun(url)
+    // {
+    //     location.href = url
+    // }
+
+    // // when click timesheet card
+    // function timesheetNavigatefun()
+    // {
+    //     if(["HR", "CEO"].includes("{{ request.user.role }}")){
+    //         $('#infoText').text("Sorry, You are not authorized")
+    //         $('#infoModal').modal('show')
+    //     }
+    //     else{
+    //         location.href = "/timeline/submission"
+    //     }
+    // }
+
+    // // when click analysys card
+    // function analysisNavigatefun()
+    // { 
+    //     // if("{{request.user.role}}" == 'Admin' || "{{request.user.role}}" == 'Manager' || "{{request.user.role}}" == 'Lead' || "{{request.user.role}}" == 'Consultant')
+    //     if(["HR","Admin","Consultant","CEO"].includes("{{ request.user.role }}"))
+    //     {
+    //         location.href = "{% url 'timeBudgetAnalysis' %}"
+    //     }
+    //     else
+    //     {
+    //         location.href = '/analysis/timesheet_analysis'
+    //     }
+    // }
+
+    // Modal close
+    $('.cancelButton').on("click",function() {
+        $('#infoModal').modal('hide');
+    })
+</script>
+
+{% endblock %}

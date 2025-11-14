@@ -1,0 +1,263 @@
+{% extends "topNav.html" %} {% block title %}User Permissions{% endblock %} 
+
+{% block userpermissions_active %}active{% endblock %}
+
+{% block main-content %}
+{% block Head %}
+<style>
+    .table-responsive{
+        height:72dvh;
+    }
+</style>
+{% endblock %}
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center col-12">
+        <div class="d-flex justify-content-start gap-4 col-10">
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="Radiogroup" id="pagePermissionsButton" checked>
+                <label class="form-check-label" for="pagePermissionsButton">
+                    Enable Page Visibility for Users
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="Radiogroup" id="otherPermissionsButton">
+                <label class="form-check-label" for="otherPermissionsButton">
+                    Enable Notifications/Restrictions
+                </label>
+            </div>
+            <!-- <div class="form-check">
+                <input class="form-check-input" type="radio" name="Radiogroup" id="rateSettings">
+                <label class="form-check-label" for="rateSettingsRadioButton">
+                    Unlock settings 
+                </label>
+            </div> -->
+        </div>
+            <!-- <label class="form-label pe-2" for="unlockAllowedWeeks">Unlock allowed weeks</label> -->
+            <button type="button" class="btn btn-primary col-2" id="saveBtn">Save</button>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped position-relative table-sm">
+                <!-- table content is here -->
+            </table>
+        </div> 
+        <!-- <form class="d-none" id="restrictionForm">
+            <div class="mb-3">
+                <label for="unlockAllowedWeeks" class="form-label">Unlock request allowed weeks : </label>
+                <input type="number" class="form-control" id="unlockAllowedWeeks" aria-describedby="emailHelp">
+            </div>
+            <div class="mb-3 form-check">
+                <label class="form-check-label" for="hrEmailRestriction">HR email restriction </label>
+                <input type="checkbox" class="form-check-input" id="hrEmailRestriction">
+            </div>
+        </form> -->
+    </div> 
+    <div class="card-footer">
+        <div class="d-none input-group col-12 d-flex align-items-end justify-content-between">
+            <div class="form-group pe-2 col-9">
+                <label for="exampleInputEmail1 text-nowrap"><b>Duration of weeks to be Unlock</b></label>
+                <input type="number" class="form-control" id="unlockAllowedWeeksCount" aria-describedby="">
+            </div>
+            <div class="col-3 text-end"><button type="button" class="btn btn-primary col-8 m-0" id="editSubmit" >Save</button></div>
+            <!-- <div class="input-group-prepend bg-primary col-10"> -->
+                <!-- <span class="input-group-text" id="weekCount">Duration of weeks to be Unlock</span> -->
+            <!-- </div> -->
+            <!-- <div class="form-outline"> -->
+                <!-- <input type="number" class="form-control" id="unlockAllowedWeeks" name="unlockAllowedWeeks"  disabled> -->
+            <!-- </div> -->
+        </div>
+    </div>
+</div>
+<!-- <div class="modal fade" id="editweekCount" tabindex="-1" aria-labelledby="editModal" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Change unlock Week Count </h5>
+                <button type="button" class="btn-close cancelButton" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input name="id" id="recordId" class="d-none"/>  
+                <div>
+                    <div class="form-outline my-2">
+                        <input type="text" class="form-control" id="unlockAllowedWeeksCount" name="unlockAllowedWeeksCount" required>
+                        <label class="form-label" for="unlockAllowedWeeksCount">Long term Unlock allowed weeks</label>
+                    </div>
+                </div>
+                <div class="row justify-content-end">
+                    <div class="col-sm-4 col-md-4 col-lg-4">
+                        <button type="submit" class="form-control bg-info" id="editSubmit" >Save</button>
+                    </div>
+                </div>
+            </div>            
+        </div>
+    </div>
+</div> -->
+<script>
+    $(document).ready( function () {
+        getData()
+    }); 
+    function getData(){
+        $.ajax({
+            url: "{% url 'getUserPermissionsData' %}",
+            type:'GET',
+            success: function(json) {
+                load_data(json)
+                $("#unlockAllowedWeeks").val(json.weeksCount);
+                $("#unlockAllowedWeeksCount").val(json.weeksCount);
+            },
+            dataType: "json"
+        });
+    }  
+
+    function postData(data){
+        $.ajax({
+            url: "{% url 'getUserPermissionsData' %}",
+            type:'POST',
+            data:data,
+            success: function(json){
+                // if (data.selectedRadio == "rateSettings"){
+                //     $('.table-responsive').hide();
+                //     $('#restrictionForm').removeClass('d-none');
+                //     $("#unlockAllowedWeeks").val(json.unlockAllowedWeeks);
+                //     $("#hrEmailRestriction").prop("checked", json.hrEmailRestriction === "true");
+                // }
+                if (data.selectedRadio == "pagePermissionsButton"){
+                    $('.input-group').addClass('d-none');
+                }
+                else{
+                    $('.input-group').removeClass('d-none');
+                }
+                load_data(json)
+                $('.table-responsive').show();
+                // $('#restrictionForm').addClass('d-none');
+            },
+            dataType: "json"
+        });
+    }
+    
+    $("#weekCount").on("click",function(){
+        $('#editweekCount').modal('show');
+    })
+
+    $(".cancelButton").on("click",function(){
+        $('#editweekCount').modal('hide');
+    })
+
+    $("#editSubmit").on("click",function(){
+        var weeksCount = $("#unlockAllowedWeeksCount").val();
+        $.ajax({
+            url: "{% url 'getUserPermissionsData' %}",
+            type:'POST',
+            data:{"weeksCount":weeksCount},
+            success: function(json){
+                $("#unlockAllowedWeeks").val(json.weeksCount);
+                $('#editweekCount').modal('hide');
+                $("#unlockAllowedWeeksCount").val(json.weeksCount);
+            },
+            dataType: "json"
+        })
+    })
+
+    let selectedRadio = "pagePermissionsButton"
+    $('input[name="Radiogroup"]').change(function () {
+        const selected = $(this).attr('id');
+        selectedRadio = selected
+        $('#'+selected+'').prop('checked', true);
+        postData({'selectedRadio':selectedRadio})
+    })
+
+    function load_data(tableData)
+    {
+        $(".table").empty()
+        let k = '<thead><tr>'
+        if (selectedRadio == 'pagePermissionsButton'){
+            k += '<th class="position-sticky top-0 start-0 bg-white"  style="z-index: 11;">Job Title</th>'
+            $.each(tableData.pageData,function (key, value) {
+                k += '<th class=" position-sticky top-0 bg-white" style="z-index: 10;">'+value['name']+'</th>'
+            })
+            k += '</tr></thead>'
+            k += '<tbody>'
+                $.each(tableData.jobTitleData,function (jobTitleKey, jobTitleValue) {
+                    k += ('<tr><td class="position-sticky start-0 text-nowrap bg-white" style="z-index: 10;">'+jobTitleValue['group__name'])
+                    if (jobTitleValue['role__name']){
+                        k += ' ' + jobTitleValue['role__name']
+                    }
+                    k += '</td>'
+                    $.each(tableData.pageData,function (pageKey, pageValue) {
+                        // Check if mapping exists
+                        const isChecked = tableData.mappings.some(function (mapping) {
+                            return mapping.page == pageValue.id && mapping.jobtitle == jobTitleValue.id;
+                        });
+                        k += '<td class="text-center"><input class="form-check-input" type="checkbox" pageId='+pageValue['id']+' jobTitleId='+jobTitleValue['id']+' value="something" '+(isChecked ? 'checked' : '')+'></td>'
+                    })
+                    k += '</tr>'
+                })
+            
+        }
+        else{
+            k += '<th class="position-sticky top-0 start-0 bg-white"  style="z-index: 11;">Job Title</th>'
+            var othersmappingsHead = [ "Daily Email", "weekly Email", "Weekly Summary Mail", "Hours Entry Restriction","exclude"];
+            // ,"exclude","Long Term Unlock"
+            $.each(othersmappingsHead,function (key, value) {
+                k += '<th class="text-nowrap position-sticky top-0 text-center bg-white" style="z-index: 10; width: 15%;">'+ value +'</th>'
+            })
+            k += '</tr></thead>'
+            k += '<tbody>'
+                $.each(tableData.jobTitleData,function (jobTitleKey, jobTitleValue) {
+                    k += ('<tr><td class="position-sticky start-0 text-nowrap bg-white" style="z-index: 10; ">'+jobTitleValue['group__name'])
+                    if (jobTitleValue['role__name']){
+                        k += ' ' + jobTitleValue['role__name']
+                    }
+                    k += '</td>'
+                    $.each(tableData.othersmappings,function (otherMappingsKey, otherMappingsValue) {
+                        // Check if mapping exists
+                        if (otherMappingsValue["jobtitle"] == jobTitleValue["id"]){
+                            k += '<td class="text-center"><input class="form-check-input" type="checkbox" fieldName="dailyEmail" jobTitleId='+otherMappingsValue['jobtitle']+' '+(otherMappingsValue['dailyEmail'] ? 'checked' : '')+'></td>'
+                            k += '<td class="text-center"><input class="form-check-input" type="checkbox" fieldName="weeklyEmail" jobTitleId='+otherMappingsValue['jobtitle']+' '+(otherMappingsValue['weeklyEmail'] ? 'checked' : '')+'></td>'
+                            k += '<td class="text-center"><input class="form-check-input" type="checkbox" fieldName="notSubmittedSummaryMail" jobTitleId='+otherMappingsValue['jobtitle']+' '+(otherMappingsValue['notSubmittedSummaryMail'] ? 'checked' : '')+'></td>'
+                            k += '<td class="text-center"><input class="form-check-input" type="checkbox" fieldName="hoursRestriction" jobTitleId='+otherMappingsValue['jobtitle']+' '+(otherMappingsValue['hoursRestriction'] ? 'checked' : '')+'></td>'
+                            k += '<td class="text-center"><input class="form-check-input" type="checkbox" fieldName="exclude" jobTitleId='+otherMappingsValue['jobtitle']+' '+(otherMappingsValue['exclude'] ? 'checked' : '')+'></td>'
+                        }
+                    })
+                    k += '</tr>'
+                })
+        }
+        k += '</tbody>'
+        $(".table").append(k)
+    }
+    function getCheckedPermissions() {
+        const checkedData = [];
+        $('.form-check-input:checked').each(function () {
+            const jobTitleId = $(this).attr('jobTitleId');
+            if (!jobTitleId) return;
+            if (selectedRadio == "pagePermissionsButton"){
+                const pageId = $(this).attr('pageId');
+                checkedData.push({
+                    jobTitleId: jobTitleId,
+                    pageId: pageId
+                });
+            }
+            else{
+                const fieldName = $(this).attr('fieldName');
+                checkedData.push({
+                    jobTitleId: jobTitleId,
+                    fieldName: fieldName
+                });
+            }
+        });
+        return checkedData;
+    }
+    $('#saveBtn').on("click",function(){
+        // if (selectedRadio == "rateSettings"){
+        //     unlockAllowedWeeks = $("#unlockAllowedWeeks").val();
+        //     hrEmailRestriction = $("#hrEmailRestriction").prop("checked");
+        //     postData({"unlockAllowedWeeks":unlockAllowedWeeks, "hrEmailRestriction":hrEmailRestriction, 'selectedRadio':selectedRadio})
+        // }
+        // else{
+            checkedData = getCheckedPermissions()
+            postData({"checkedData":JSON.stringify(checkedData),'selectedRadio':selectedRadio})
+        // }
+    })
+    </script>
+{% endblock %} 

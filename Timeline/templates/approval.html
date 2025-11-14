@@ -1,0 +1,831 @@
+{% extends "topNav.html" %}
+
+{% block title %}Projects summary {% endblock %}
+{% block approval_active %}active{% endblock %}
+
+{% block main-content %}
+
+<style> 
+    /* date change on card header */
+    .arrows:hover {
+        background-color: rgb(170, 168, 168);
+    } 
+    @media (min-width: 1200px) {
+        .modal-xxl {
+            max-width: 90dvw;
+        }
+    }
+    .table-responsive { max-height:86.8dvh;}
+    @media (max-width: 1366px) {
+        .table-responsive { max-height:85.4dvh;}
+    }
+    @media (min-width: 1367px) and (max-width: 1600px) {
+        .table-responsive { max-height:87.1dvh;}
+    }
+</style>
+
+<!-- wrap your two panels in a full-height flex container -->
+<div class="d-flex" style="height: 93vh;">
+  
+    <!-- LEFT: your summary table, flex‐grows to fill -->
+    <div class="flex-grow-1" id="leftPanel">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="col-3">
+                <input class="form-control" id="searchinput" type="text" placeholder="Search..">
+            </div>
+            <div class="d-flex justify-content-end col-9">
+                <div class="d-flex justify-content-end align-items-center">
+                    <strong id="currentWeek" class="me-2"></strong>
+                    <div>
+                        <button class="form-control border-0 left_arrow arrows" style="border-radius: 50%;" type="button" ><i class="fas fa-angle-left"></i></button> 
+                    </div>
+                    <strong id="fromdate" class="mb-0 mx-2"></strong><strong >-</strong><strong id="todate" class="mb-0 mx-2"></strong>
+                    <div>
+                        <button class="form-control border-0 right_arrow arrows" style="border-radius: 50%;" type="button" ><i class="fas fa-angle-right"></i></button>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end align-items-center text-info ms-2" >
+                    <small for="Rating Info small muted">Rating Info: </small>
+                    <i class="bi bi-info-circle ms-2" data-bs-toggle="modal" data-bs-target="#ratingModal"  style="font-size: 1.2rem;"></i>
+                </div>
+            </div>
+        </div>
+        <div class="card-body table-responsive">
+          <table id="summarytbl" class="table table-sm table-striped table-hover position-relative">
+            <thead class="position-sticky top-0">
+                <th class="fw-bold">#</th>
+                <th class="fw-bold">Name</th>
+                <th class="fw-bold">Reporting To</th>
+                <th class="fw-bold text-center">Hours</th>
+                <th class="fw-bold text-center">Overview</th>
+                <th class="fw-bold text-center" >Submission status</th>
+                <th class="fw-bold text-center">Approval status</th>
+                <th class="fw-bold text-center">View</th>
+            </thead>
+          </table>
+          <p id="footerMessage"></p>
+        </div>
+      </div>
+    </div>
+  
+    <!-- RIGHT: the unlock‐requests “sidebar” -->
+    <div 
+      id="cardContainer"
+      class="bg-light border rounded p-0 overflow-auto flex-shrink-0 bg-transparent"
+      style="width: 300px;    /* or whatever you like */
+             max-height: 100%;">
+      <!-- cards will be appended here by your JS -->
+    </div>
+  
+  </div>
+  
+
+<!-- Rating modal -->
+<div class="modal" id="ratingModal" style="font-size: 15px">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+  
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <h4 class="modal-title">Ratings Distribution</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+    
+            <!-- Modal body -->
+            <div class="modal-body ">
+                <div class="d-flex flex-row justify-content-between gap-2">
+                    <div class="card ">
+                        <p class="card-header text-center"><i class="bi bi-emoji-frown" style="color: rgba(241, 207, 9, 0.979);"></i> Poor</p>
+                        <label class="card-body text-center">Did not meet objectives and/or consistently violated core values</label>                                    
+                    </div>
+                    <div class="card ">
+                        <p class="card-header text-center"><i class="bi bi-emoji-neutral" style="color: rgba(241, 207, 9, 0.979);"></i> Average</p>
+                        <label class="card-body text-center">Did not meet most objectives and/or did not demonstrate core values at the required level</label>                                    
+                    </div>
+                    <div class="card ">
+                        <p class="card-header text-center"><i class="bi bi-emoji-smile" style="color: rgba(241, 207, 9, 0.979);"></i> Good</p>
+                        <label class="card-body text-center">Consistently met and in some cases exceeded objectives, consistently demonstrated core values</label>                                    
+                    </div>
+                    <div class="card ">
+                        <p class="card-header text-center"><i class="bi bi-emoji-laughing" style="color: rgba(241, 207, 9, 0.979);"></i> Very Good</p>
+                        <label class="card-body text-center">Exceeded majority of objectives; consistently demonstrated core values and role models of few</label>                                    
+                    </div>
+                    <div class="card ">
+                        <p class="card-header text-center"><i class="bi bi-emoji-heart-eyes" style="color: rgba(241, 207, 9, 0.979);"></i> Excellent</p>
+                        <label class="card-body text-center">Exceeded performance expectations and role models the core values</label>                                    
+                    </div>                            
+                </div>
+            <div class="card mt-3">
+                <h5 class="card-header" >Parameters :</h5>
+                <ul>
+                    <label><li> Punctuality of submission of works / tasks</li></label>
+                    <label><li class="ms-4"> Quality of work / task (No potential reworks)</li></label>
+                    <label><li class="ms-4"> Time management & multi-tasking</li></label>
+                    <label><li> Completeness or Progress of work / task (Actual progress Vs Planned progress)</li></label>
+                    <label class="ms-4"><li> Provide / utilize opportunity for improvements</li></label>
+                </ul>
+            </div>
+            <div class="card mt-3">
+                <h5 class="card-header">Core Values :</h5>
+                <ul class="mt-3">
+                    <label><li class="ms-4"> Innovation</li></label>
+                    <label><li class="ms-4"> Goals</li></label>
+                    <label><li class="ms-4"> Team Work</li></label>
+                    <label><li class="ms-4"> Commitment</li></label>
+                    <label><li class="ms-4"> Integrity</li></label>
+                    <label><li class="ms-4"> Customers Satisfaction</li></label>
+                    <label><li class="ms-4"> Responsibility</li></label>
+                </ul>
+            </div>
+            </div>
+        </div>
+    </div>
+</div>
+  
+<!-- detailed_view modal -->
+<div class="modal fade" id="detailed_view_modal" tabindex="-1" aria-labelledby="detailed_view_modal" aria-hidden="true">
+    <div class="modal-dialog modal-xxl modal-dialog-centered" >
+        <div class="modal-content">
+            <div class="modal-header d-flex justify-content-arround align-items-center">
+                <h5 class="modal-title">Project Detailed View of <span id="leftheading"></span></h5>
+                <p id="timesheetStatusInfo" class="text-info mb-0"></p>
+                <p hidden id=employeeid></p>
+                <button type="button" class="detailedviewClose btn-close ms-0" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table id="projectTable" class="table table-sm table-hover text-nowrap"></table>
+                <div>
+                    <label>Comments</label>
+                    <textarea class="form-control" readonly id="commentsOfWeek" rows="3"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rejection reason entering modal -->
+<div class="modal fade" id="warningRejectionModal" tabindex="-1" role="dialog" data-bs-backdrop="static" data-bs-keyboard="false"> 
+    <div class="modal-dialog modal-dialog-centered modal-md" role="document"> 
+        <div class="modal-content"> 
+            <div class="modal-body text-center p-lg-4"> 
+                <i class="bi bi-exclamation-triangle" style="color: rgb(235, 183, 15);font-size: 3rem;"></i> 
+                <h4 class="text-warning bold mt-1">Warning !</h4> 
+                <p class="mt-3" id="warningRejectionText"></p>
+                <div class="form-outline">
+                    <textarea type="text" class="form-control" id="rejectReason"></textarea>
+                    <label class="form-label">Rejection reason</label>
+                </div>
+                <small id="rejectModalError" class="text-danger"></small>
+                <div class="row mt-3">
+                    <div class="col">
+                        <button type="button" class="btn btn-sm btn-dark w-100 cancelButton" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                    <div class="col">
+                        <button type="button" class="btn btn-sm btn-warning w-100" id="rejectModalBtn" data-bs-dismiss="modal">Reject</button>
+                    </div>
+                </div>
+            </div> 
+        </div> 
+    </div> 
+</div>
+
+<!-- common modals -->
+{% include 'notifications.html' %}
+
+<script type="text/javascript">
+    let expandedRows = {
+        projectRows: new Set(),
+        milestoneRows: new Set()
+    };
+    let hasRequests = false;
+    let unlockStatus = ""
+    const container = document.getElementById('cardContainer');
+    const leftPanel = document.getElementById('leftPanel')
+    // getdata 
+    function getdata(){
+        $.ajax({
+            url: "{% url 'get_summary_template' %}",
+            success: function(json) {
+                load_data(json)
+            },
+            dataType: "json"
+        });
+    }
+    
+    function ajax_post(data)
+    {
+        $.ajax({
+            url: "{% url 'get_summary_template' %}",
+            type:'POST',
+            data:data,
+            success: function(json) {
+                load_data(json)
+            }
+        })
+    }
+   
+    $(document).ready( function () {
+        getdata()
+        //right arrow
+        $('.right_arrow').on("click",function(){
+            var fromdate_ = $("#fromdate").text();
+            ajax_post({fromdate_:fromdate_,mode:"postdate"})
+        })
+        //left arrow
+        $('.left_arrow').on("click",function(){
+            var fromdate_ = $("#fromdate").text();
+            ajax_post({fromdate_:fromdate_,mode:"predate"})
+        })
+         
+    });
+   
+    //Main table loading.............................................
+    function load_data(json){ 
+        $('#currentdate').text('Date : '+json.currentdate)
+        $('#currentWeek').text('Week : '+json.weeknum)
+        $('#fromdate').text(json.week_start_date)
+        $('#todate').text(json.week_end_date)
+        unlockStatus=json.unlockStatus
+        $('#summarytbl tr').not(function(){ return !!$(this).has('th').length; }).remove();
+        var k='<tbody>'
+        if(json.tabledata.length!=0) 
+        {
+            $.each(json.tabledata, function(i, val){
+                k+='<tr class="row_selected" emp_id='+val['id']+' tabindex='+i+' reason='+val['unlock_reason']+'>'
+                    k+='<td>'+(i+1)+ '</td>'
+                    k+='<td class="viewproj_list"><a class="closedown">'+val['first_name']+'</a></td>'
+                    k+='reporter_name' in val?'<td><a class="reportcolum">'+val['reporter_name']+'</a></td>':'';
+                    k+='<td class="totalhour text-center">'+val['Week_hours']+ '</td>'
+                    k+=`<td class="status text-center `+overViewStatusColor(val['timesheet_status'])+`">`+val['timesheet_status']+`</td>`
+                    k+='<td class="statusSubmission text-center '+(val['submissionStatus'] == "OnTime" ? "text-success": submissionStatusColor(val['submissionStatus']))+'" >'+val['submissionStatus']+'</td>'
+                    k+='<td class="text-center '+(val['actionStatus'] == "OnTime" ? "text-success": submissionStatusColor(val['actionStatus']))+'" >'+val['actionStatus']+'</td>'
+                    k+=`<td class="text-center"><i class="fa fa-eye detailed_proj_list text-info"></i></td>`
+            })
+        }
+        else
+        { 
+            k+='<tr><td colspan="9" class="text-center text-info ">No Timesheet Submission found</td></tr>'
+        }
+        k+='</tbody>'
+        $('#summarytbl').append(k);
+        'reporter_name' in json.tabledata[0]?'': $('#summarytbl th:eq(2)').hide(); //removing header 
+
+        unlockcards(json.unlockResqued)
+    }
+    
+    // searchbar   
+    $("#searchinput").on("keyup", function() {
+        var value = $(this).val().toLowerCase();
+        var filteredCount = 0;
+        var totalCount = $('#summarytbl tbody tr').length;
+        $('#summarytbl tbody tr').each(function() {
+        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            if ($(this).is(":visible")) {
+                filteredCount++;
+                totalCount++;
+                $(this).find('td:first').text(filteredCount); 
+            }
+            else {
+                $(this).find('td:first').text(''); // Clear the index number for non-visible rows
+            }
+        });
+        $('#footerMessage').html('Filtered ' + filteredCount +  ' items.');
+    });
+        
+    //detailed view..................................................
+    //show detailed view for a particular user
+    $(document).on('click', '.detailed_proj_list', function(event){
+        var status = $(this).closest("tr").find(".status").html(); //status
+        var hours = $(this).closest("tr").find(".totalhour").html(); // week total hour
+        var index_num = $(this).closest('td').attr('index_no');
+        var empl_id = $(this).closest('tr').attr('emp_id');
+        var fromdate_ = $("#fromdate").text();
+        var empname =  $(this).closest("tr").find(".closedown").html(); 
+        $("#leftheading").html(empname)
+        $("#employeeid").text(empl_id)
+        if( status === "Submitted" || status === "Rejected" ){
+            $("#timesheetStatusInfo").text("")
+        }
+        else{
+            $("#timesheetStatusInfo").text(status==="Accepted" ? "Timesheet is already Accepted" : "Timesheet is Not Submitted" );
+        }
+        $.ajax({
+            url: "{% url 'get_summary_template' %}",
+            data:{empl_id:empl_id,fromdate_:fromdate_,mode:"detailed_view"},
+            type:'POST', 
+            success: function(response) {
+                loadDetailedView(response)
+            },
+            dataType: "json"
+        });
+        $('#detailed_view_modal').modal({
+            backdrop: 'static', // Prevents modal from closing on backdrop click
+            keyboard: false    // Prevents modal from closing with Esc key)
+        }).modal('show');
+    });
+   
+    // when change rate
+    $(document).on('change', '.ratingSelect', function(){
+        var rate = $(this).val();
+        var empl_id = $("#employeeid").text();
+        var fromdate_ = $("#fromdate").text();
+
+        const assignBy =  $(this).closest('tr').attr('assignBy');
+        const assignId = $(this).closest('tr').data('id');
+        $.ajax({
+            url: "{% url 'get_summary_template' %}",
+            data:{value:rate,
+                    empl_id:empl_id,
+                    fromdate_:fromdate_,
+                    assignId:assignId,
+                    assignBy:assignBy,
+                    field:"rate",
+                    mode:"update"},
+            type:'POST', 
+            success: function(response) {
+                loadDetailedView(response)
+            }
+        })
+
+    })
+   
+    // accept
+    $(document).on('click', '.acceptBtn', function(){
+        var empl_id = $("#employeeid").text();
+        var fromdate_ = $("#fromdate").text();
+        var empname = $("#leftheading").text();
+        const assignBy =  $(this).closest('tr').attr('assignBy');
+        const assignId = $(this).closest('tr').data('id');
+        if($(this).closest("tr").attr("status")=="Submitted")
+        {
+            if($(this).closest("tr").attr("rating")!=0)
+            {
+                var message = "once Accepted you can't Reject and Rate Are you want to Accept?"
+                $('#warningText').text(message)
+                $('#warningModal').modal('show')
+                $('.warningOkBtn').off('click');
+                $('.warningOkBtn').on('click',function(){
+                    $('#warningModal').modal('hide')
+                    $.ajax({
+                        url: "{% url 'get_summary_template' %}",
+                        data:{
+                            value:"Accepted",
+                            empl_id:empl_id,
+                            fromdate_:fromdate_,
+                            assignId:assignId,
+                            assignBy:assignBy,
+                            field:"status",
+                            mode:"update"
+                        },
+                        type:'POST',
+                        success: function(response) {
+                            var message = empname+"'s submitted hours Accepted Successfully ..."
+                            loadDetailedView(response)
+                        },
+                        dataType: "json"
+                    });
+                })
+            }
+            else
+            {
+                var message = "Sorry!!.. can't Accept because timesheet not rated."
+                $('#infoText').text(message)
+                $('#infoModal').modal("show");
+            }
+        }
+        else{ 
+            var message = "Already "+$(this).closest("tr").attr("status")
+            $('#infoText').text(message)
+            $('#infoModal').modal("show");
+        }
+    })
+    
+    //reject
+    $(document).on('click', '.rejectBtn', function() {
+        // Fetch relevant data from the DOM
+        const empl_id = $("#employeeid").text(); // Employee ID
+        const fromdate_ = $("#fromdate").text(); // Start date of the week
+        const empname = $("#leftheading").text(); // Employee's name
+        const assignBy =  $(this).closest('tr').attr('assignBy');
+        const assignId = $(this).closest('tr').data('id');
+        const status = $(this).closest("tr").attr("status"); // Task status
+        const rejectionReason = $(this).closest('tr').attr('rejectionReason'); // Rejection reason
+        if (status == "Submitted") {
+            var message = "Once Rejected you can't Accept and Rate.\nAre you sure you want to Reject?";
+            $('#warningRejectionText').text(message); // Set the warning message
+            $('#warningRejectionModal').modal('show'); // Show the warning modal
+
+            // Clear any previous error messages and rejection reasons
+            $('#rejectModalError').text("");
+            $('#rejectReason').val("");
+
+            // Remove any previous click event handler for #rejectModalBtn
+            $('#rejectModalBtn').off('click');
+
+            // Bind the click event to the #rejectModalBtn
+            $('#rejectModalBtn').on('click', function() {
+                var rejectionReason = $('#rejectReason').val(); // Get the rejection reason from the modal input
+
+                // Ensure that rejection reason is provided
+                if (rejectionReason != "") {
+                    $('#warningRejectionModal').modal('hide'); // Hide the warning modal
+                    
+                    // Make the AJAX request
+                    $.ajax({
+                        url: "{% url 'get_summary_template' %}",
+                        data: {
+                            value: "Rejected",
+                            empl_id: empl_id,
+                            fromdate_: fromdate_,
+                            assignId:assignId,
+                            assignBy:assignBy,
+                            field: "status",
+                            rejectionReason: rejectionReason,
+                            mode: "update"
+                        },
+                        type: 'POST',
+                        success: function(response) {
+                            var message = empname + "'s submitted hours Rejected Successfully ...";
+                            $('#successText').text(message); // Show success message
+                            $('#successModal').modal('show'); // Show success modal
+                            loadDetailedView(response); // Refresh detailed view
+                        },
+                        dataType: "json"
+                    });
+                } else {
+                    $('#rejectModalError').text("Enter a valid reason for rejection"); // Error message for missing reason
+                }
+            });
+        } else {
+            // If the task is already in a non-submitted status, display the status and rejection reason
+            var message = "Already " + status + "<br>Reason: " + rejectionReason.replace(/_/, ' ');
+            $('#infoText').html(message);
+            $('#infoModal').modal("show");
+        }
+    });
+    
+    // for toggling milestone row
+    $('#projectTable').on("click","tr .toggleProject",function() {
+        const parentId = $(this).closest('tr').data('id');
+
+        $(`.taskRow-${parentId}`).toggle();
+
+        $(this).toggleClass('fa-chevron-right fa-chevron-down');
+    });
+    // Toggle for None project milestone
+    $('#projectTable').on("click","tr .toggleNonProject",function() {
+        
+        const milestoneId = $(this).closest('tr').data('id');
+
+        // Toggle grandchild rows for the clicked child row
+        $(`.milestoneRow-${milestoneId}`).toggle();
+
+        $(this).toggleClass('fa-chevron-right fa-chevron-down');
+    });
+    // Modal close
+    $('.cancelButton').on("click",function() {
+        $('#warningModal').modal('hide');
+        $('#infoModal').modal('hide');
+        $('#warningRejectionModal').modal('hide');
+        $('#successModal').modal('hide')
+        $('#errorModal').modal('hide')
+    })
+    // detailedview close
+    $('.detailedviewClose').on("click",function() {
+        var fromdate_ = $("#fromdate").text();
+        ajax_post({fromdate_:fromdate_,mode:"date"})
+        $('#detailed_view_modal').modal('hide')
+    })
+
+//...............................................................................
+
+    // //detailed veiw table load data
+    function loadDetailedView(json){
+        // Projects table............................................................
+        $('#projectTable').empty()
+        var h='<thead>'
+        h+='<th class="fw-bold"style="width:35dvw">Jobs</th>'
+        h+='<th class="fw-bold"style="width:10dvw">Budget Owner</th>'
+        $.each(json.week_days, function(i, val){
+            h+='<th class="text-center text-nowrap"><strong>' + val + '</strong></th>';
+        })
+        h+='<th class="fw-bold text-center">Rating</th>'
+        h+='<th class="fw-bold text-center">Status</th>'
+        h+='<th class="fw-bold">Accept</th>'
+        h+='<th class="fw-bold">Reject</th>'
+        h+='</thead>'
+        $('#projectTable').append(h);
+        var k='<tbody class="">'  
+        const userID = "{{ request.user.id }}"
+        var totalData = {}
+
+        if(json.emp_deailed_data.length!=0){ 
+            // milestoneId = 0
+
+            $.each(json.emp_deailed_data, function(projectIndex, projectValue){
+                var rowindex = projectValue["quotation"].replace(/[\/&,\s-]/g, "");  
+                k+='<tr class="projectRow parent-'+rowindex+' " data-id='+rowindex+'>'
+                    k+='<td colspan=2 ><i class="fas fa-chevron-down me-2 toggleProject"></i>'+projectValue['quotation']+(projectValue['projectName'] ? ' - '+projectValue['projectName'] : '')+'</td>'
+                    $.each(projectValue['workedHours'], function(dayIndex, dayValue){
+                        // k+= '<td class ="py-1 px-1" style="width:4dvw"><input type="text" value="" class="form-control text-center fw-bold px-0" readonly/></td>';//'+secondsToHm(dayValue)+'
+                        totalData[dayIndex] = (totalData[dayIndex] || 0) + dayValue;
+                    });
+
+                    k+='<td colspan=4></td>'
+                k+='</tr>'
+                $.each(projectValue['milestones'], function(milestoneIndex, milestoneValue){
+                    // k+=(milestoneId == milestoneValue["milestone"]) ? '':'<tr class="milestoneRow projectRow-'+rowindex+' m-'+milestoneValue["milestone"]+'" data-id='+milestoneValue["milestone"]+'><td colspan=13 class="ps-3"><i class="fas fa-chevron-down me-2 toggle"></i>'+milestoneValue['milestoneName']+'</td></tr>'
+                    // k+='<tr class="milestoneRow projectRow-'+rowindex+' m-'+milestoneValue["milestone"]+'" data-id='+milestoneValue["milestone"]+'><td colspan=13 class="ps-3"><i class="fas fa-chevron-down me-2 toggle"></i>'+milestoneValue['milestoneName']+'</td></tr>'
+                    $.each(milestoneValue['tasks'], function(taskIndex, taskValue){
+                        if (json.taskList.hasOwnProperty((projectValue["quotation"]))){
+                            let entriesArray =json.taskList[projectValue["quotation"]]
+                            var result = $.grep(entriesArray, function(obj) {
+                                return obj.task === taskValue['id']; // Replace 'id' and '2' with the key and value you're looking for
+                            });
+                            if (result.length > 0) {
+                                let rate = result[0].rate
+                                let status = result[0].timesheet_status || 'Not Submited'
+                                let rejectionReason = result[0].rejectionReason
+                                k+='<tr class="taskRow taskRow-'+rowindex+' '+rowindex+'-milestoneRow-'+milestoneValue["milestone"]+' milestoneRow-'+milestoneValue["milestone"]+
+                                        '"rejectionReason="'+rejectionReason+'" quotation="'+projectValue['quotation']+'" project='+projectValue['projectId']+
+                                        'projectName="'+projectValue['projectName']+'"milestone='+milestoneValue['milestoneId']+
+                                        'milestoneName="'+milestoneValue['milestoneName']+'"task='+taskValue['id']+' \taskName="'+taskValue['name']+
+                                        '"status="'+status+'"rating='+rate+' data-id= '+taskValue['assignId']+' assignBy='+taskValue['assignBy']+' >'
+
+                                    k+='<td class="ps-5">'+taskValue['name']+'</td>'
+
+                                    k+='<td class = "text-start">'+taskValue['assignByName']+'</td>'
+                                    
+                                    $.each(taskValue['workedHours'], function(dayIndex, dayValue){
+                                        k+= '<td class ="p-1" style="width:4dvw"><input type="text" value="'+secondsToHm(dayValue)+'"class="form-control text-center px-0" celldate='+dayIndex+' disabled /></td>';
+                                    });
+                                    
+                                    k+=`<td class="p-1"><select class="form-control form-select text-start ratingSelect task-`+taskValue['id']+`" `+
+                                        (taskValue['assignBy'] != userID ? "disabled":status!="Submitted"? "disabled":"")+` style="width: 7dvw;">
+                                            <option value="" hidden>Rate</option>
+                                            <option value="1" `+(rate==1? 'selected':'')+`>Poor</option>
+                                            <option value="2" `+(rate==2? 'selected':'')+`>Average</option>
+                                            <option value="3" `+(rate==3? 'selected':'')+`>Good</option>
+                                            <option value="4" `+(rate==4? 'selected':'')+`>Very good</option>
+                                            <option value="5" `+(rate==5? 'selected':'')+`>Excellent</option>
+                                        </select></td>`
+                                    k+='<td class="'+(status==="Accepted" ?"text-success": status ==="Rejected"?  "text-danger":"text-info" ) +'" > '+ status +'</td>'
+                                    k+='<td class="py-1 px-1"><button type="submit" class="form-control acceptBtn btn btn-success'+
+                                        '"'+
+                                        (taskValue['assignBy'] != userID ? "disabled":status === "Accepted" || status === "Submitted"? "" : "disabled")+'>Accept</button></td>'
+                                
+                                    k+='<td class="py-1 px-1"><button type="submit" class="form-control rejectBtn btn btn-danger'+
+                                    '"'+
+                                    (taskValue['assignBy'] != userID ? "disabled":status === "Rejected" || status === "Submitted"? "" : "disabled")+'>Reject</button></td>'
+                                
+                                k+='</tr>'
+                            }
+                        }
+                    });
+                    // milestoneId = milestoneValue["milestone"]
+                });
+            });
+        }
+        else
+        {
+            k +='<tr><td colspan="13" class="text-center text-info">No tasks Submitted!..." </td></tr>'
+        }
+        k +='</tbody>'
+        k += '<tbody>'
+        milestoneId = 0
+        $.each(json.nonProjectdata, function(nonprojectIndex, nonprojectValue){
+            $.each(nonprojectValue['milestones'], function(milestoneIndex, milestoneValue){
+                if (milestoneId !== milestoneValue["milestone"]) {
+                    k += '<tr class="milestoneRow m-' + milestoneValue["milestone"] + '" data-id="' + milestoneValue["milestone"] + '">';
+                    k += '<td colspan="2"><i class="fas fa-chevron-down me-2 toggleNonProject"></i>' + milestoneValue['milestoneName'] + '</td>';
+
+                    $.each(milestoneValue['workedHours'], function(dayIndex, dayValue) {
+                        // k += '<td class="py-1 px-1"><input type="text" value="' + secondsToHm(dayValue) + '" class="form-control text-center fw-bold px-0" readonly/></td>';
+                        totalData[dayIndex] = (totalData[dayIndex] || 0) + dayValue;
+                    });
+                    k += '<td colspan="11"></td>';
+                    k += '</tr>';
+                }
+                $.each(milestoneValue['tasks'], function(taskIndex, taskValue){
+                    if (json.taskList.hasOwnProperty((json.nonProjectdata[0].quotation))){
+                        let entriesArray =json.taskList[json.nonProjectdata[0].quotation]
+                        var result = $.grep(entriesArray, function(obj) {
+                            return obj.task === taskValue['id']; // Replace 'id' and '2' with the key and value you're looking for
+                        });
+                        if (result) {
+                            let status = result[0].timesheet_status || 'Not Submited'
+                            var rejectionReason = ''
+                            rejectionReason =result[0].rejectionReason
+                            if (rejectionReason != null)
+                                rejectionReason =rejectionReason.replace(/\s+/g, '_')
+                            k+=`<tr class="taskRow milestoneRow-${milestoneValue["milestone"]}" rejectionReason="${rejectionReason}" quotation="${nonprojectValue['quotation']}" 
+                                    project="${nonprojectValue['project']}" projectName="${nonprojectValue['projectName']}" 
+                                    milestone="${milestoneValue['milestone']}" milestoneName="${milestoneValue['milestoneName']}" 
+                                    task=${taskValue['id']} taskName="${taskValue['name']}" status=${status} data-id ="${taskValue['assignId']}">`
+                            
+                                k+='<td class="ps-5">'+taskValue['name']+'</td>'
+
+                                k+='<td class = "text-start">'+taskValue['assignByName']+'</td>'
+
+                                $.each(taskValue['workedHours'], function(dayIndex, dayValue){
+                                    k+= '<td class ="p-1" style="width:4dvw"><input type="text" value="'+secondsToHm(dayValue)+'"class="form-control text-center px-0" celldate='+dayIndex+' disabled /></td>';
+                                });
+                                k+=`<td class="p-1" ><input type="text" class="border-0 bg-transparent" disabled style="width: 8dvw;"/></td>`
+                                k+='<td class="'+(status==="Accepted" ?"text-success": status ==="Rejected"?  "text-danger":"text-info" ) +'" > '+ status +'</td>'
+
+                                k+='<td class="p-1"><button type="submit" class="form-control acceptBtn btn btn-success'+ 
+                                    '"'+ 
+                                    (taskValue['assignBy'] != userID ? "disabled":status === "Accepted" || status === "Submitted" ? "" : "disabled")+'>Accept</button></td>'
+                                k+='<td class="p-1"><button type="submit" class="form-control rejectBtn btn btn-danger'+
+                                    '"'+
+                                    (taskValue['assignBy'] != userID ? "disabled":status === "Rejected" || status === "Submitted" ? "" : "disabled")+'>Reject</button></td>'
+                            k+='</tr>'
+                        }
+                    }
+                });
+                milestoneId = milestoneValue["milestone"]
+            });
+        });
+        k+='</tbody>';
+        if(Object.keys(totalData).length !== 0){
+            grandTotal = 0
+            k+='<tbody>';
+            k+='<tr><td></td>'
+            k+='<td class="text-center fw-bold">Total</td>'
+            $.each(totalData, function(item, itemValue) {
+                k += '<td class="text-center fw-bold">'+(secondsToHm(itemValue)?secondsToHm(itemValue):"00.00")+'</td>';
+                grandTotal+=itemValue
+            });
+            k+='<td  colspan=2 class="text-center text-info"> Estimated Hours : '+(json.estimatedHours)+'</td>'
+            k+='<td  colspan=2 class="text-center fw-bold text-primary"> Actual Hours : '+(secondsToHm(grandTotal)?secondsToHm(grandTotal):"00.00")+'</td></tr>'
+            k+='</tbody>';
+        }
+        $('#projectTable').append(k);
+        $('#commentsOfWeek').val(json.comments[0]['comments'])
+    }
+
+    function unlockcards(data){
+        container.innerHTML = ''; // Clear previous cards
+        data.forEach((item, index) => {
+            if (item.unlock_status ==="Requested") {
+
+                hasRequests = true;
+                const card = document.createElement('div');
+                card.className = "card mb-3 shadow";
+
+                card.innerHTML = `
+                <div class="card-header fw-bold bg-primary text-white">
+                    ${item.uid__first_name} - Unlock Request
+                </div>
+                <div class="card-body">
+                    <p class="card-text"><strong>Reason:</strong> ${item.unlock_reason}</p>
+                    <button class="btn btn-success me-2" onclick="handleAccept('${item.id}','${item.uid__first_name}')">Accept</button>
+                    <button class="btn btn-danger" onclick="handleReject('${item.id}','${item.uid__first_name}')">Reject</button>
+                </div>
+                `;
+                container.appendChild(card);
+            }
+        });
+        if (!hasRequests) {
+            container.classList.add('d-none');
+            leftPanel.classList.remove('me-2');
+        } else {
+            container.classList.remove('d-none');
+            leftPanel.classList.add('me-2');
+        }
+    }
+
+    function handleAccept(id, name) {
+        var message = "Are you sure you want to accept " + name + "'s unlock request?";
+        $('#warningText').text(message);
+        $('#warningModal').modal('show');
+
+        // Clear any previous click event handler to avoid multiple triggers
+        $('.warningOkBtn').off('click').on('click', function() {
+            // Hide the modal properly
+            $('#warningModal').modal('hide');
+
+            // Make an AJAX request
+            $.ajax({
+                url: "{% url 'accept-unlock-request' %}",
+                type: 'POST',
+                data: { id: id },
+                dataType: "json",
+                success: function(response) {
+                    if (response.success) {
+                        var successMessage = name + "'s Timesheet successfully unlocked.";
+                        $('#successText').text(successMessage);
+                        $('#successModal').modal('show');
+                    } else {
+                        $('#errorText').text(response.message || "Failed to unlock timesheet.");
+                        $('#errorModal').modal('show');
+                    }
+                    hasRequests = false;
+                    getdata(); // Make sure this is properly defined
+                },
+                error: function(xhr, status, error) {
+                    let errMsg = "An unexpected error occurred.";
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errMsg = xhr.responseJSON.message;
+                    }
+                    $('#errorText').text(errMsg);
+                    $('#errorModal').modal('show');
+                },
+                complete: function() {
+                    // Ensure modal is hidden properly even if an error occurs
+                    $('#warningModal').modal('hide');
+                    $('.warningOkBtn').off('click'); // Cleanup
+                }
+            });
+        });
+
+        // Ensure focus does not stay on the hidden modal
+        $('#warningModal').on('hidden.bs.modal', function() {
+            $('.warningOkBtn').blur(); // Remove focus from button
+        });
+    }
+
+    function handleReject(id,name) {
+        var message = "Are you want to "+ name +"'s Unlock requset Reject?"
+        $('#warningText').text(message)
+        $('#warningModal').modal('show')
+        $('.warningOkBtn').off('click');
+        $('.warningOkBtn').on('click',function(){
+            $('#warningModal').modal('hide')
+            $.ajax({
+                url: "{% url 'reject-unlock-request' %}",
+                type: 'POST',
+                data: {
+                    id: id,
+                },
+                dataType: "json",
+                success: function(response) {
+                    if (response.success) {
+                        var message = name + "'s Timesheet request rejected.";
+                        $('#successText').text(message);
+                        $('#successModal').modal('show');
+                        getdata()
+                    } else {
+                        $('#errorText').text(response.message || "Failed to unlock timesheet.");
+                        $('#errorModal').modal('show');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    let errMsg = "An unexpected error occurred.";
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errMsg = xhr.responseJSON.message;
+                    }
+                    $('#errorText').text(errMsg);
+                    $('#errorModal').modal('show');
+                }
+            });
+        });
+    }
+
+    function submissionStatusColor(status){
+        return (status == "Delayed")? "text-danger":"text-info"
+    }
+
+    function overViewStatusColor(status){
+        switch (status) {
+            case "Rejected":
+                return "text-danger"
+                break;
+            case "Accepted":
+                return "text-success"
+                break;
+            case "Submitted":
+                return "text-primary"
+                break;
+            case "NotSubmitted":
+                return "text-danger"
+                break;
+            default:
+                return "text-info"
+                break;
+        }
+    }
+
+    // hours convertion
+    function convertToSeconds(hours =0, minutes=0) {
+        return (
+            Number(hours) * 60 * 60 +
+            Number(minutes) * 60 
+            );
+        }    
+
+    function secondsToHm(seconds) {
+        if (seconds!=0){
+            sec = Number(seconds);
+            var h = Math.floor(sec / 3600);
+            var m = Math.floor(sec % 3600 / 60);
+            return h.toString().padStart(2, '0') +'.'+ m.toString().padStart(2, '0') ; 
+        }
+        else{
+            return ''
+        }
+    }
+</script>
+
+{% endblock %}

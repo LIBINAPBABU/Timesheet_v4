@@ -1,0 +1,684 @@
+{% extends "topNav.html" %}
+
+{% block title %}Projects summary {% endblock %}
+{% block weeklyTimesheetStatus_active %}active{% endblock %}
+{% block Head %}
+<style>
+    .table-responsive {
+        max-height: 69dvh;
+    }
+
+    @media (max-width: 1366px) {
+        .table-responsive {
+            max-height: 66dvh;
+        }
+    }
+
+    @media (min-width: 1367px) and (max-width: 1600px) {
+        .table-responsive {
+            max-height: 68dvh;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block main-content %}
+<div class="card" >
+    <div class="card-header d-flex flex-row justify-content-start align-items-center p-0">
+        <ul class="nav nav-tabs">
+            <li class="nav-item" id="submissionTab">
+                <a class="nav-link active text-capitalize">Weekly timesheet Submission Status</a>
+            </li>
+            <li class="nav-item" id="approvalTab">
+                <a class="nav-link text-capitalize">Weekly Timesheet Approval Status</a>
+            </li>
+        <ul>
+    </div>
+    <div class="card-header d-flex flex-row justify-content-end align-items-center">
+        <div class="d-flex align align-items-center">
+            <label class="form-group border-lable-flt me-2">
+                <select class="form-control custom-select selectpicker" name="Empid" id="Empid" data-live-search="true">
+                </select>
+                <span><i class="fas fa-filter"></i> Employees</span>
+            </label>
+            <div class="form-outline me-2" style="min-width: 120px;">
+                <input type="number" id="weekyear" class="form-control" min="2020" max="2100" placeholder="YYYY" />
+                <label class="form-label" for="weekyear">Year</label>
+            </div>
+            <!-- vertical bar -->
+            <div class="vr mx-2"></div>
+            <div class="form-group border-lable-flt me-2" style="min-width: 130px;">
+                <select class="form-control" id="weekStart"></select>
+                <span>Week Start</span>
+            </div>
+            <div class="form-group border-lable-flt me-2" style="min-width: 130px;">
+                <select class="form-control" id="weekEnd"></select>
+                <span>Week End</span>
+            </div>
+            <!-- Open model  using js script click the button -->
+            <button class="btn btn-info me-2 text-capitalize text-dark" id="statuSubmitBtn">submit</button>
+            <!-- <button class="btn btn-info ms-auto text-capitalize text-dark text-nowrap" id="exportBtn">
+                Export Employees who have not submitted timesheet For Selected Year & Week 
+            </button> -->
+            <button class="btn btn-info me-2 text-capitalize text-dark ms-2 text-nowrap" id="exportBtn2"> Export Compliance Overview</button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div style="width:100%;" class="table-responsive">
+            <table id="submissionStatusTabl"
+                class="table table-sm table-striped table-bordered table-hover position-relative">
+                <!-- table content here-->
+            </table>
+            <table id="approvalStatusTabl"
+                class="table table-sm table-striped table-bordered table-hover position-relative">
+                <!-- table content here-->
+            </table>
+        </div>
+    </div>
+    <div class="card-footer d-flex flex-row justify-content-end align-items-center">
+    </div>
+</div>
+
+<!-- Model for Employees who are not submitted for export to excel -->
+<div class="modal fade" id="exportModal" tabindex="-1" role="dialog" aria-labelledby="exportModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exportModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body  ">
+                <div class="table-responsive">
+                    <table id="exportTable" class="table table-sm table-striped table-bordered table-hover position-relative">
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <!-- add function onclick close model -->
+                <button type="button" class="btn btn-primary" id="exportToExcelBtn">Export to Excel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div model id="delayedDetails" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel"><span id="Name"></span> Timesheet : Report on Approval
+                    Status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body  ">
+                <div class="table-responsive">
+                    <table id="delayedDetailsTable"
+                        class="table table-sm table-striped table-bordered table-hover position-relative">
+                        <thead>
+                            <tr>
+                                <th class="fw-bold text-center position-sticky top-0 start-0 bg-white"
+                                    style="z-index: 10;"> Budget Owner </th>
+                                <th class="fw-bold text-center position-sticky top-0 start-0 bg-white"
+                                    style="z-index: 10;"> Status </th>
+                            </tr>
+                        </thead>
+                        <tbody id="delayedDetailsBody">
+                            <!-- Delayed details will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include SheetJS library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+    $(document).ready(function () {
+        var currentYear = new Date().getFullYear();
+        $("#weekyear").val(currentYear);
+        $("#weekyear").focus();
+        $("#weekyear").datepicker({
+            format: "yyyy",
+            viewMode: "years",
+            minViewMode: "years"
+        });
+        let getResponse
+        let tabId = "submission"
+        $.ajax({
+            url: '{% url "getWeeklyTimesheetStatus" %}',
+            type: 'GET',
+            dataType: 'json',
+            success: function (response) {
+                getResponse = response
+                populateWeekDropdown(weekStartDropdown, response.current_week-8);
+                populateWeekDropdown(weekEndDropdown, response.current_week);
+                loadTblData(response.employees, "submission_status", response.year, response.current_week, currentYear, parseInt($('#weekStart').val()),parseInt($('#weekEnd').val()))
+                $('#Empid').empty().append('<option value="">All Employees</option>');
+                $.each(response.employees, function(empId, empData) {
+                    const name = empData.first_name || 'Unnamed';
+                    $('#Empid').append(
+                        $('<option>', {
+                            value: empId,
+                            text: name
+                        })
+                    );
+                });
+                // Refresh the Bootstrap-select UI if you're using it
+                $('#Empid').selectpicker('refresh');
+            },
+        });
+
+        // card footer info
+        function generateCard(text, iconClass, iconColorClass) {
+            return `
+                <div class="card p-2 me-2 d-flex flex-row">
+                    ${text} <i class="bi ${iconClass} ${iconColorClass} ps-2"></i>
+                </div>`;
+        }
+
+        $('.card-footer').html(
+            `<div class="d-flex" id="submittedInfo">
+                ${generateCard("Submitted ontime","bi-check-lg","text-success")}
+                ${generateCard("Submitted but delayed","bi-check-lg","text-warning")}
+                ${generateCard("Not submitted","bi-x-lg","text-danger")}
+            </div>`);
+
+        // Get ISO week number (1–53)
+        Date.prototype.getWeek = function () {
+            const date = new Date(this.getTime());
+            date.setHours(0, 0, 0, 0);
+            // Thursday in current week decides the year
+            date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+            const week1 = new Date(date.getFullYear(), 0, 4);
+            return 1 + Math.round(((date - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+        }
+
+        const weekStartDropdown = $("#weekStart").empty();
+        const weekEndDropdown = $("#weekEnd").empty();
+
+        function populateWeekDropdown(dropdown, selectedWeek) {
+            for (let i = 1; i <= 52; i++) {
+                dropdown.append($('<option>', {
+                    value: i,
+                    text: `Week ${i}`,
+                    selected: i === selectedWeek
+                }));
+            }
+        }
+       
+        function switchTab(tabType) {
+            tabId = tabType
+            const isSubmission = tabType === 'submission';
+            $('#submissionTab a').toggleClass('active', isSubmission);
+            $('#approvalTab a').toggleClass('active', !isSubmission);
+            $('#exportBtn').text(
+                isSubmission
+                    ? 'Export Employees who have not submitted timesheet For Selected Year & Week'
+                    : 'Export Employees who have not approved timesheet For Selected Year & Week'
+            );
+            $('.card-footer').html(
+                isSubmission
+                    ?    `<div class="d-flex" id="submittedInfo">
+                            ${generateCard("Submitted - Ontime","bi-check-lg","text-success")}
+                            ${generateCard("Submitted - Delayed","bi-check-lg","text-warning")}
+                            ${generateCard("Not Submitted","bi-x-lg","text-danger")}
+                        </div>`
+                    :   `<div class="d-flex" id="approvalInfo">
+                            ${generateCard("Approved/Rejected - Ontime","bi-check-lg","text-success")}
+                            ${generateCard("Approved/Rejected - Delayed","bi-check-lg","text-warning")}
+                            ${generateCard("Approved/Rejeceted - Partial","bi-exclamation-triangle","text-warning")}
+                            ${generateCard("Approval/Rejection - Pending","bi-clock-history","text-secondary")}
+                            ${generateCard("Not Submitted","bi-x-lg","text-danger")}
+                        </div>`
+            );
+            loadTblData(getResponse.employees, isSubmission ? 'submission_status' : 'approval_status', getResponse.year, getResponse.current_week, $("#weekyear").val(), parseInt($('#weekStart').val()),parseInt($('#weekEnd').val()));
+        }
+        $("#submissionTab").on('click', () => switchTab('submission'));
+        $("#approvalTab").on('click', () => switchTab('approval'));
+    
+        $(document).on('click', '#statuSubmitBtn', function () {
+            const weekStart = parseInt($('#weekStart').val());
+            const weekEnd = parseInt($('#weekEnd').val());
+            const selectedEmpId = $('#Empid').val(); // '' means all employees
+            const selectedYear = parseInt($('#weekyear').val());
+            
+            $.ajax({
+                url: '{% url "getWeeklyTimesheetStatus" %}',
+                type: 'POST',
+                data: {
+                    weekStart: weekStart,
+                    weekEnd: weekEnd,
+                    weekYear: selectedYear,
+                    emplyeeId: selectedEmpId
+                },
+                dataType: 'json',
+                success: function (response) {
+                    getResponse = response
+                    const statusType = (tabId == 'submission') ? 'submission_status' : 'approval_status'
+                    loadTblData(getResponse.employees, statusType, getResponse.year, getResponse.current_week, selectedYear, parseInt($('#weekStart').val()), parseInt($('#weekEnd').val()))
+                },
+            });
+        });
+        
+        $(document).on('click', '#exportBtn', function () {
+            let weekStart = parseInt($("#weekStart").val());
+            let weekEnd = parseInt($("#weekEnd").val());
+            let weekYear = $("#weekyear").val();
+            let employee = $("#Empid").val();
+            const statusType = (tabId == 'submission') ? 'submission_status' : 'approval_status';
+
+            let labelText = "Employees who have not " +
+                (tabId === 'submission' ? 'Submitted' : 'Approved') +
+                " timesheet for the week " + weekStart + " to " + weekEnd +
+                " of the year " + weekYear;
+
+            $("#exportModalLabel").text(labelText);
+            $('#exportTable').empty();
+
+            // Start building table header
+            var k = '<thead>';
+            k += '<th class="fw-bold text-center position-sticky top-0 start-0 bg-white" style="z-index: 10;"> Name </th>';
+            for (var i = weekStart; i <= weekEnd; i++) {
+                k += '<th class="fw-bold text-nowrap p-2 text-center position-sticky top-0 bg-white">Week-' + i + '</th>';
+            }
+            k += '</thead><tbody>';
+
+            if (statusType == 'submission_status') {
+                $.each(getResponse.employees, function (empKey, empValue) {
+                    if (empValue['weekYear'] == weekYear) {
+                        k += "<tr class='text-nowrap'><td>" + empValue['first_name'] + "</td>";
+                        for (let i = weekStart; i <= weekEnd; i++) {
+                            if (empValue[i]) {
+                                if (empValue[i]['submission_status'] == false) {
+                                    if (["Submitted", "Accepted", "Rejected"].includes(empValue[i]['timesheet_status'])) {
+                                        k += "<td class='text-nowrap'>Submitted but delayed</td>";
+                                    } else {
+                                        k += "<td class='text-nowrap'>Not Submitted</td>";
+                                    }
+                                } else {
+                                    k += "<td class='text-nowrap'>OnTime</td>";
+                                }
+                            }
+                            else {
+                                const joinedYear = empValue?.joinedYear;
+                                const joinedWeek = empValue?.joinedWeek;
+
+                                k += getStatus(weekYear,getResponse.year,joinedYear,joinedWeek,getResponse.current_week,i)
+                                    ? '<td class="text-nowrap">Not Submitted</td>'
+                                    : '<td></td>';
+                            }
+                        }
+                        k += "</tr>";
+                    }
+                });
+                k += '</tbody>';
+                $('#exportTable').append(k);
+                $('#exportModal').modal('show');
+            } else {
+                $.ajax({
+                    url: '{% url "getNonSubmittData" %}',
+                    type: 'POST',
+                    data: {
+                        weekStart: weekStart,
+                        weekEnd: weekEnd,
+                        weekYear: weekYear,
+                        status: statusType,
+                        emplyeeId: employee
+                    },
+                    dataType: 'json',
+                    success: function (response) {
+                        var employeeRows = {};
+                        // Step 1: Organize by employee and week
+                        $.each(response.approvalData, function (weekKey, weekData) {
+                            $.each(weekData, function (index, entry) {
+                                var empName = entry['approvedBy__first_name'];
+                                if (!employeeRows[empName]) {
+                                    employeeRows[empName] = {};
+                                }
+                                employeeRows[empName][weekKey] = entry['timesheetstatus'];
+                                employeeRows[empName]['joinedYear'] = entry['joinedYear'];
+                                employeeRows[empName]['joinedWeek'] = entry['joinedWeek'];
+                            });
+                        });
+
+                        // Step 2: Build rows
+                        $.each(employeeRows, function (empName, weekStatusMap) {
+                            k += "<tr class='text-nowrap'><td>" + empName + "</td>";
+                            for (let i = weekStart; i <= weekEnd; i++) {
+                                let weekKey = i.toString();
+                                let status = weekStatusMap[weekKey];
+                                if(status){
+                                    k += "<td class='text-nowrap'>" + status + "</td>";
+                                }
+                                else{
+                                    const joinedYear = weekStatusMap['joinedYear'];
+                                    const joinedWeek = weekStatusMap['joinedWeek'];
+
+                                    k += getStatus(weekYear,getResponse.year,joinedYear,joinedWeek,getResponse.current_week,i)
+                                        ? '<td></td>'
+                                        : '<td> N/A </td>';
+                                }
+                            }
+                            k += "</tr>";
+                        });
+
+                        k += '</tbody>';
+                        $('#exportTable').append(k);
+                        $('#exportModal').modal('show');
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error fetching export data:", error);
+                    }
+                });
+            }
+        });
+    
+        $(document).on('click', '#exportBtn2', function () {
+            let weekStart = parseInt($("#weekStart").val());
+            let weekEnd = parseInt($("#weekEnd").val());
+            let weekYear = $("#weekyear").val();
+            var totalWeeks = (weekEnd - weekStart) + 1
+            const statusType = (tabId == 'submission') ? 'submission_status' : 'approval_status';
+            let labelText = " Timesheet compliance overview for all employees from Week " +
+                weekStart + " to " + weekEnd +
+                " of the year " + weekYear+"(span of "+ totalWeeks +" weeks)";
+            $("#exportModalLabel").text('');
+            $('#exportTable').empty();
+            $.ajax({
+                url: '{% url "getConsolidatedReportData" %}',
+                type: 'POST',
+                data: {
+                    weekYear: weekYear,
+                    weekStart: weekStart,
+                    weekEnd: weekEnd,
+                    status: statusType
+                },
+                dataType: 'json',
+                success: function (response) {
+                    // Start building table header
+                    if(statusType=='submission_status'){
+                        var k = '<thead><tr class="text-center"><th class="fw-bold" colspan="5">'+labelText+'</th></tr><tr>';
+                            k += '<th class="fw-bold text-center position-sticky top-0 start-0 bg-white" style="z-index: 10;"> Employee Name </th>';
+                            k += '<th class="fw-bold text-center position-sticky top-0 start-0 bg-white" style="z-index: 10;"> Total Weeks "Submitted ontime" </th>';
+                            k += '<th class="fw-bold text-center position-sticky top-0 start-0 bg-white" style="z-index: 10;"> Total Weeks "Submitted but delayed" </th>';
+                            k += '<th class="fw-bold text-center position-sticky top-0 start-0 bg-white" style="z-index: 10;"> Total Weeks "Not Submitted" </th>';
+                            k += '<th class="fw-bold text-center position-sticky top-0 start-0 bg-white" style="z-index: 10;"> Total Weeks "Not Applicable" </th>';
+                        k += '</tr></thead><tbody>';
+                            $.each(response.ConsolidatedSubmittedReport, function (empKey, empValue) {
+                                applicableweekCount = getApplicableCount(parseInt(weekYear),currentYear,getResponse.current_week,empValue['joinedYear'],empValue['joinedWeek'],empValue['resignedYear'],empValue['resignedWeek'],weekStart,weekEnd)
+                                k += '<tr>'
+                                k += '<td>'+empValue['first_name']+'</td>'
+                                k += '<td>'+empValue['ontimecount']+'</td>'
+                                k += '<td>'+(empValue['submittedCount']-empValue['ontimecount'])+'</td>'
+                                k += '<td>'+Math.abs(applicableweekCount-empValue['submittedCount'])+'</td>'
+                                k += '<td>'+Math.abs(applicableweekCount-totalWeeks)+'</td>'
+                                k += '</tr>'
+                            });
+                        k += '</tbody>';
+                    }
+                    else
+                    {
+                        var k = '<thead><tr class="text-center"><th class="fw-bold" colspan="5">'+labelText+'</th></tr><tr>';
+                            k += '<th class="fw-bold text-center position-sticky top-0 start-0 bg-white" style="z-index: 10;"> Employee Name </th>';
+                            k += '<th class="fw-bold text-center position-sticky top-0 start-0 bg-white" style="z-index: 10;"> Total Weeks "Approved ontime" </th>';
+                            k += '<th class="fw-bold text-center position-sticky top-0 start-0 bg-white" style="z-index: 10;"> Total Weeks "Approved but delayed" </th>';
+                            k += '<th class="fw-bold text-center position-sticky top-0 start-0 bg-white" style="z-index: 10;"> Total Weeks "Not Approved" </th>';
+                            k += '<th class="fw-bold text-center position-sticky top-0 start-0 bg-white" style="z-index: 10;"> Total Weeks "Not Applicable" </th>';
+                        k += '</tr></thead><tbody>';
+                            $.each(response.ConsolidatedSubmittedReport, function (empKey, empValue) {
+                                // let applicableweekCount = getApplicableCount(parseInt(weekYear),currentYear,getResponse.current_week,empValue['joinedYear'],empValue['joinedWeek'],empValue['resignedYear'],empValue['resignedWeek'],weekStart,weekEnd)
+                                let ontimeApprovedCount = empValue['ontimeApproved_count']
+                                let delayedApprovedCount = empValue['delayedApproved_count']
+                                let notApprovedCount = empValue['notApproved_count']
+                                let approvedByName = empValue['name']
+                                let totalApprovalWeeks = ontimeApprovedCount + delayedApprovedCount + notApprovedCount
+                                // let minWeeks = Math.min(applicableweekCount,totalApprovalWeeks)
+                                console.log(ontimeApprovedCount,delayedApprovedCount,notApprovedCount,totalApprovalWeeks)
+                                k += '<tr>'
+                                k += '<td>'+ approvedByName +'</td>'
+                                k += '<td>'+ ontimeApprovedCount +'</td>'
+                                k += '<td>'+ delayedApprovedCount +'</td>'
+                                k += '<td>'+ notApprovedCount +'</td>'
+                                k += '<td>'+ Math.abs( totalWeeks - totalApprovalWeeks ) +'</td>'
+                                k += '</tr>'
+                            });
+                        k += '</tbody>';
+                    }
+                    $('#exportTable').append(k);
+                    $('#exportModal').modal('show');
+                }
+            });
+            
+        })
+    });
+   
+    // load function for table submissionTbl
+    function loadTblData(data, status, current_Year, current_Week, selectedYear, weekStart, weekEnd) {
+        $('#submissionStatusTabl').empty();
+        var k = '<thead>'
+        k += '<th class="fw-bold text-center position-sticky top-0 start-0 bg-white" style="z-index: 10;"> Name </th>';
+        for (var i = weekStart; i <= weekEnd; i++) {
+            k += '<th class="fw-bold text-nowrap p-2 text-center position-sticky top-0 bg-white" >Week-' + i + '</th>';
+        }
+        k += '</thead>';
+        k += '<tbody>';
+        var j = 0;
+
+        if (Object.keys(data).length > 0) {
+            $.each(data, function (empKey, empValue) {
+                j++
+                k += '<tr id="' + empKey + '" class="text-nowrap">';
+                k += '<td class="fw-bold text-left position-sticky start-0 bg-white text-nowrap">' + j + ' . ' + data[empKey]['first_name'] + '</td>';
+                for (var i = weekStart; i <= weekEnd; i++) {
+                    // Check if the week number exists for the employee
+                    if (empValue.hasOwnProperty(i) && empValue?.weekYear == selectedYear) {
+                        const weekNumValue = empValue[i];
+                        if (status === "approval_status")
+                        {
+                            const iconMap = {
+                                missed: '<i class="bi bi-exclamation-triangle delayed text-warning"></i>',
+                                ontime: '<i class="bi bi-check-lg text-success"></i>',
+                                delayedapproval: '<i class="bi bi-check-lg text-warning"></i>',
+                                approvalpending: '<i class="bi bi-clock-history text-secondary delayed"></i>'
+                            };
+                            const icon = iconMap[weekNumValue["approval_status"]] || '<i class="bi bi-x-lg text-danger"></i>';
+                            k += `<td class="text-center">${icon}</td>`;
+                        }
+                        else {
+                            const statusValue = weekNumValue[status];
+                            const tsStatus = weekNumValue['timesheet_status'];
+                            let icon = '';
+
+                            if (["Submitted", "Accepted", "Rejected"].includes(tsStatus)) {
+                                if (statusValue === true) {
+                                    icon = '<i class="bi bi-check-lg text-success"></i>'; // Green check
+                                } else if (statusValue === false) {
+                                    icon = '<i class="bi bi-check-lg text-warning"></i>'; // Yellow check
+                                } else {
+                                    icon = '<i class="bi bi-x-lg text-danger"></i>'; // Red X for undefined/null
+                                }
+                            } 
+                            else {
+                               if (i < current_Week){
+                                icon = '<i class="bi bi-x-lg text-danger"></i>'; // Red X for other statuses
+                               }
+                            }
+
+                            k += `<td class="text-center">${icon}</td>`;
+                        }
+                    }
+                    else
+                    {
+                        const joinedYear = empValue?.joinedYear;
+                        const joinedWeek = empValue?.joinedWeek;
+                        const resignedYear = empValue?.resignedYear;
+                        const resignedWeek = empValue?.resignedWeek;
+
+                        k += getStatus(selectedYear ,current_Year ,joinedYear, joinedWeek, resignedYear, resignedWeek, current_Week, i)
+                            ? '<td class="text-center"><i class="bi bi-x-lg text-danger"></i></td>'
+                            : '<td class="text-center">N/A</td>';
+                    }
+                }
+
+                k += '</tr>';
+            });
+        }
+        else {
+            k += '<tr><td colspan="11" class=" text-info text-uppercase"> No Data </td></tr>'
+        }
+        k += '</tbody>';
+        $('#submissionStatusTabl').append(k)
+    }
+
+    // exportToExcelBtn click export table data to excel
+    $(document).on('click', '#exportToExcelBtn', function () {
+        let tableHead = $("#exportModalLabel").text();
+        let table = document.getElementById("exportTable");
+        let workbook = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+        if (tableHead){
+            XLSX.writeFile(workbook, "Non Submitted Employees.xlsx");
+        }
+        else{
+            XLSX.writeFile(workbook, "Timesheet compliance overview.xlsx");
+        }
+    });
+
+    // view delaed details 
+    $(document).on('click', '.delayed', function () {
+        let empName = $(this).closest('tr').find('td:first').text()
+        let colIndex = $(this).closest('td').index()
+        var columnHeading = $('#submissionStatusTabl thead th').eq(colIndex).text().trim();
+        var weekNum = columnHeading.replace('Week-', '');
+        let weekYear = $("#weekyear").val()
+        let status = $("input[name='inlineRadioOptions']:checked").val();
+        let empId = $(this).closest('tr').attr('id')
+            $.ajax({
+                url: '{% url "getDelayedTimesheet" %}',
+                type: 'POST',
+                data: { empId: empId, weekNum: weekNum, weekYear: weekYear, status: status },
+                dataType: 'json',
+                success: function (response) {
+                    $('#Name').text(empName.split('.')[1]) // set employee name in modal title 
+                    $('#delayedDetails').modal('show');
+                    $('#delayedDetailsBody').empty();
+                    var k = '<tr>';
+                    if (response.timesheetstatus.length > 0) {
+                        $.each(response.timesheetstatus, function (empKey, empValue) {
+                            k += '<tr id="' + empKey + '" class="text-nowrap">';
+                            k += '<td class="fw-bold text-left position-sticky start-0 bg-white text-nowrap">' + empValue['approvedBy__first_name'] + '</td>';
+                            k += '<td class="text-center ' + (empValue['approvedStatus']=='Pending' ? "text-danger" : (empValue['approvedStatus'] == "Accepted Ontime" ? 'text-success' : 'text-warning')) + '">'+ empValue['approvedStatus'] +'</td>';
+                            // k += '<td class="text-center ' + (empValue['status']=='Submitted' ? "text-danger" : (empValue['approved_status'] ? 'text-success' : 'text-warning')) + '">'+ (empValue['status']=='Submitted' ? "Pending" : (empValue['approved_status'] ? 'Accepted OnTime' : 'Accepted Delayed')) + '</td>'; // change text color based on status 
+                            k += '</tr>';
+                        });
+                    }
+                    else {
+                        k += '<tr><td colspan="3" class=" text-info text-center"> Time sheet has not submitted </td></tr>'
+                    }
+                    $('#delayedDetailsBody').append(k)
+                },
+            });
+    });
+    
+    // hide modal when close button is clicked
+    $(document).on('click', '.btn-close', function () {
+        $('#exportModal').modal('hide');
+        $('#delayedDetails').modal('hide');
+    });
+
+    function getApplicableCount(selectedYear, currentYear, current_Week, joinedYear, joinedWeek, resignedYear, resignedWeek, weekStart, weekEnd) {
+
+        // weekStart = weekStart+1;
+        let adjustedWeekStart = weekStart;
+        let adjustedWeekEnd = weekEnd;
+
+        // If employee joined this year
+        if (joinedYear === selectedYear) {
+            adjustedWeekStart = Math.max(weekStart, joinedWeek);
+        }
+
+        // If employee resigned this year
+        if (resignedYear === selectedYear) {
+            adjustedWeekEnd = Math.min(weekEnd, resignedWeek-1);
+        }
+
+        // If selected year is current year and employee is still working
+        if (selectedYear === currentYear && (resignedYear > currentYear || resignedYear === null)) {
+            adjustedWeekEnd = Math.min(adjustedWeekEnd, current_Week-1);
+        }
+
+        if( (resignedYear < selectedYear && resignedYear != null) || selectedYear < joinedYear  )
+        {
+            return 0;
+        }
+
+        // Final check: if the week range is valid (end >= start), return the count
+        if (adjustedWeekEnd >= adjustedWeekStart) {
+            weekDifference = adjustedWeekEnd - adjustedWeekStart
+            return weekDifference+1;
+        }
+
+        // No applicable weeks
+        return 0;
+    }
+
+    function getStatus(selectedYear,current_Year,joinedYear,joinedWeek,resignedYear,resignedWeek,current_Week,i){
+        const showStatus = (
+            // (selectedYear < current_Year && (
+            //     (joinedYear == selectedYear && joinedWeek < i) ||
+            //     (joinedYear < selectedYear)
+            // )) ||
+            // (selectedYear == current_Year && (
+            //     (joinedYear < selectedYear && current_Week > i) ||
+            //     (joinedYear == selectedYear && current_Week > i && i > joinedWeek)
+            // ))
+
+            (
+                selectedYear < current_Year && (
+                    (
+                        joinedYear == selectedYear && (
+                            resignedYear == selectedYear 
+                                ? i >= joinedWeek && i < resignedWeek 
+                                : i >= joinedWeek
+                        )
+                    ) ||
+                    (
+                        joinedYear > selectedYear ? false :
+                            (
+                                joinedYear < selectedYear && (
+                                    resignedYear != null
+                                    ? (resignedYear == selectedYear 
+                                        ? i < resignedWeek 
+                                        : ( resignedYear < selectedYear ? false : true))
+                                    : true
+                            )
+                        )
+                    ) 
+                )
+            ) ||
+            (
+                selectedYear == current_Year && (
+                    (
+                        joinedYear == selectedYear && (
+                            resignedYear == selectedYear 
+                                ? i >= joinedWeek && i < resignedWeek 
+                                : i >= joinedWeek && i < current_Week
+                        )
+                    ) ||
+                    (
+                        joinedYear < selectedYear && (
+                            resignedYear != null
+                                ? (resignedYear == selectedYear ? i < resignedWeek : false)
+                                : i < current_Week
+                        )
+                    )
+                )
+            )
+
+        );
+        return showStatus
+    }
+</script>
+{% endblock %}

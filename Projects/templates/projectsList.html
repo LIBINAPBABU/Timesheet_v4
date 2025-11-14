@@ -1,0 +1,137 @@
+{% extends "topNav.html" %} {% block title %}Projects{% endblock %} 
+
+{% block projectlist_active %}active{% endblock %}
+{% block Head %}
+
+<style>
+    .table-responsive { max-height:81dvh;}
+    @media (max-width: 1366px) {
+        .table-responsive { max-height:82.8dvh;}
+    }
+    @media (min-width: 1367px) and (max-width: 1600px) {
+        .table-responsive { max-height:81.8dvh; }
+    }
+</style>
+{% endblock %}
+{% block main-content %}
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="col-8">
+            <i class="fas fa-table"></i> <strong>Templates Details</strong>
+        </div>
+        <div class="col-2">
+            <input class="form-control" id="searchinput" type="text" placeholder="Search..">
+        </div>
+    </div>
+    <div class="card-body"> 
+        <div class="table-responsive mb-1">
+            <table id="tablequotations" class="table table-sm position-relative" >
+                <thead class="position-sticky top-0">
+                    <th style="width: 3dvw;">#</th>
+                    <th style="width: 3dvw;"></th>
+                    <th>Quotation Number</th>
+                    <th>Project Name</th>
+                    <th>Customer Name</th>
+                    <th>Task Name</th>
+                    <th>Quot Hours</th>
+                </thead>
+            </table>
+        </div>
+   
+    </div>
+</div>
+    <script>
+    
+    $(document).ready( function () {
+        getData();
+        // searchbar   
+        $("#searchinput").on("keyup", function() {
+            var value = $(this).val().toLowerCase();
+            $("#tablequotations tr").filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            });
+        });
+    });  
+    function getData(){
+        $.ajax({
+            url: "{% url 'getProjects' %}",
+            type:'GET',
+            success: function(response) {
+                load_data(response.quotations)
+            },
+            dataType: "json"
+        });
+    } 
+    
+    function load_data(response) {
+        let k = "<tbody>";
+        let totalQuantity = 0;
+        let rowIndex = 1;
+
+        // Grouping data by quotation number (we'll use an object to accumulate total hours)
+        let groupedData = {};
+
+        // First, group the data by quotation number
+        $.each(response, function(index, val) {
+            let quotationnumber = val["quotation_no"].replace(/[^a-zA-Z0-9 ]/g, '');
+            if (!groupedData[quotationnumber]) {
+                groupedData[quotationnumber] = {
+                    total_quantity: 0,
+                    rows: [],
+                };
+            }
+            groupedData[quotationnumber].rows.push(val);
+            groupedData[quotationnumber].total_quantity += val['bdg_hrs'];
+        });
+
+        // Now build the table rows
+        $.each(groupedData, function(quotationnumber, data) {
+            // Add the main row for this quotation
+            let firstRow = `<tr class="projectRow text-nowrap">
+                                <td>${rowIndex}</td>
+                                <td class="text-end"><i class="fas fa-chevron-right toggle"></i></td>
+                                <td>${data.rows[0]['quotation_no']}</td>
+                                <td>${data.rows[0]['project__name'] ? data.rows[0]['project__name'] : ""}</td>
+                                <td>${data.rows[0]['customer_name'] ? data.rows[0]['customer_name'] : ""}</td>
+                                <td></td> <!-- Empty cell placeholder -->
+                                <td class="fw-bold">${data.total_quantity}</td> <!-- Placeholder for total quantity -->
+                            </tr>`;
+            k += firstRow;
+            
+            // Add the sub-rows for this quotation
+            $.each(data.rows, function(index, val) {
+                let subRow = `<tr>
+                                <td></td><td></td><td></td><td></td><td></td>
+                                <td>${val['quotationcost__cost__name']}</td>
+                                <td>${val['bdg_hrs']}</td>
+                            </tr>`;
+                k += subRow;
+            });
+
+            // Move to the next quotation (increment the row index)
+            rowIndex++;
+        });
+
+        k += "</tbody>";
+        $('#tablequotations').append(k); // Clear existing table content and add new rows
+        hideAllProjectRow()
+    }
+
+    // Hide all rows first  
+    function hideAllProjectRow(){
+        $('#tablequotations .projectRow').each(function() {
+            $(this).nextUntil('.projectRow').hide();
+            if ($(this).find(".toggle").attr('class').match(/fa-chevron-down/)){
+                $(this).find(".toggle").toggleClass('fa-chevron-right fa-chevron-down');
+            }
+        })
+    }
+
+    $('#tablequotations').on("click","tr .toggle",function() {
+        $(this).closest('tr').nextUntil('.projectRow').toggle();
+        $(this).toggleClass('fa-chevron-right fa-chevron-down');
+    });
+    
+    </script>
+{% endblock %} 

@@ -1,0 +1,209 @@
+{% extends "topNav.html" %}
+{% block title %}Lesson {% endblock %} 
+{% block suggestion_active %}active{% endblock %}
+{% block Head %}
+    <meta name="csrf-token" content="{{ csrf_token }}">
+{% endblock %} 
+{% block main-content %}
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-table"></i> <strong>Suggestion Table</strong>
+        <span style="float: right;"><a href="" data-bs-toggle="modal" data-bs-target="#add_suggestion" id="add_suggestion_link" style="color:rgb(9, 139, 172) ;">+ Add Suggestion</a> </span>
+    </div>
+    <div class="card-body">
+        <table id="suggestionTable" class="dataTable display compact cell-border text-nowrap" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Name</th>
+                    <th>Suggestion</th>
+                    <th>Status</th>
+                    <th>Remarks</th>
+                    <th>Edit</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in data %}
+                    <tr id={{item.id}} >
+                         <td class=" MyModel">{{item.created_date|date:"Y-m-d"}}</td>
+                        <td>{{ item.uid__first_name }}</td>
+                        <td class="suggestion">{{ item.suggestions }}</td>
+                         <td class="suggestionStatus">{{item.suggestion_status}}</td>
+                        <td class="remarks">{{item.remarks}}</td>
+                        <td><i class="bi bi-pencil-square editIcon text-info" {% if item.uid != request.user.id and request.user.role != 'Admin' %}style="opacity: 0.5; pointer-events: none;"{% endif %} data-bs-toggle="modal" data-bs-target="#add_suggestion"></i>
+                        <td><i class="bi bi-trash deleteIcon text-danger" {% if item.uid != request.user.id %} style="pointer-events: none; opacity: 0.5;" {% endif %} ></i></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>        
+    </div>
+</div>
+<!--  Add Suggestion Modal -->
+<div class="modal fade" id="add_suggestion" tabindex="-1" aria-labelledby="suggestion_Modal" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/documents/suggestion/" enctype="multipart/form-data"  method="POST" autocomplete="off">
+                     {% csrf_token %}
+                        <input name="suggestionId" id="suggestionId" class="d-none" />                                                              
+                    </div>  
+                    <!-- Suggestion -->
+                <div class="mb-3 textarea-wrapper">
+                    <label class="form-group border-lable-flt">
+                    <span style="margin-left: 10px; margin-right: 10px;">Suggestion</span>
+                       <textarea id="suggestion" name="suggestion" class="form-control" rows="4" readonly style="margin-left: 10px; margin-right: 10px; width: calc(100% - 20px); box-sizing: border-box;"></textarea>
+                </div>
+   
+                <!-- Remarks -->
+                    <div class="mb-3">
+                        <label class="form-group border-lable-flt">
+                        <span style="margin-left: 10px; margin-right: 10px;">Remarks</span>
+                       <textarea name="remarks" rows="4" style="width: calc(100% - 20px); box-sizing: border-box;margin-left: 10px; margin-right: 10px;" class="form-control" id="remarksField"></textarea>
+                    </div> 
+                    <!-- Suggestion status -->
+                    <div class="d-flex flex-row mb-3 gap-2 justify-content-between">
+                        <label class="form-group border-lable-flt">
+                            <select class="form-control ms-3 " id="suggestionStatusDropdown" name="suggestionStatusDropdown">
+                                <option value="Open">Open</option>
+                                <option value="On Going">On Going</option>
+                                <option value="Hold">Hold</option>
+                                <option value="Closed">Closed</option>
+                                <option value="Not applicable">Not applicable</option>
+                            </select>
+                            <span>Status</span>
+                        </label>
+                <button type="submit" style="height: 28px; font-size: 12px; padding: 2px 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; margin-right: 15px;">Submit</button>
+
+                    </button>                 
+                </form>
+            </div>            
+        </div>
+    </div>
+</div>
+<!-- common modals -->
+{% include 'notifications.html' %}
+<script>
+    $(document).ready(function() {
+        var scrollYValue = '70dvh'; // Default scroll value
+        // Check screen width
+        if ($(window).width() <= 1366) {
+            scrollYValue = '70dvh'; // Change scroll value when screen width is 1300px or less
+        }
+        if ($(window).width() > 1367 & $(window).width() <= 1600) {
+            scrollYValue = '71.2dvh'; // Change scroll value when screen width is 1300px or less
+        }
+
+        // Initialize the DataTable
+        var table = $('#suggestionTable').DataTable({
+            columnDefs: [
+                { width: '10%', targets: 0 },  // Set width of the first column (0 index)
+                { width: '20%', targets: 1 },
+                { width: '60%', targets: 2 },
+                { width: '5%', targets: 3 ,className:'text-center'},
+                { width: '5%', targets: 4 ,className:'text-center'}
+            ],
+            dom: 'Bfrtip',
+            buttons: [
+                {
+                    extend: 'excel',
+                    filename: 'suggestion'  // Set your desired file name here
+                }
+            ],
+            scrollY: scrollYValue,
+            scrollCollapse: true,
+            paging: false, // If you don't want pagination
+            responsive:true
+        });
+
+        // delete
+        $('.deleteIcon').click(function(event) {
+            var suggestionId = $(this).closest('tr').attr('id');
+            // Get CSRF token from meta tag
+            var csrfToken = $('meta[name="csrf-token"]').attr('content');
+
+            $('#warningText').text("Would you like to remove the suggestion?");
+            $('#warningModal').modal("show");
+            $('.warningOkBtn').off('click');
+
+            $('.warningOkBtn').on('click',function(event){
+                $('#warningModal').modal('hide')
+                $.ajax({
+                    url: '{% url "suggestion" %}', 
+                    type: 'POST',
+                    data : {suggestionId:suggestionId,mode:"deleteSuggestion"},
+                    headers: {
+                        'X-CSRFToken': csrfToken  // Add CSRF token in the headers
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status=='ok') {
+                            // You can add a success message or remove the row from the UI
+                            table.row('#' + suggestionId).remove(); // This removes the row with the given suggestionId
+                            table.draw();
+                        } else {
+                            console.error("Failed to delete suggestion");
+                        }
+                        $('#infoText').text("Removed Successfully!");
+                        $('#infoModal').modal("show");
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error: " + error); // Log any errors that occur
+                    }
+                });
+            });
+        });
+
+        if("{{request.user.role}}" == 'Admin'){
+            $('#suggestionStatusDropdown').prop('disabled',false)
+        }
+        else{
+            $('#suggestionStatusDropdown').prop('disabled',true)
+        }
+        
+    });
+
+    // edit suggestion
+    $('.editIcon').click(function(event){
+        var suggestionId = $(this).closest('tr').attr('id');
+        var suggestion = $(this).closest('tr').find('.suggestion').text();
+        var suggestionStatus = $(this).closest('tr').find('.suggestionStatus').text();
+        var remarks= $(this).closest('tr').find('.remarks').text();
+        console.log(remarks)
+        $('#suggestion').val(suggestion).prop('readonly',true)
+        $('#remarksField').val(remarks).show()
+        $('#suggestionId').val(suggestionId)
+        $('#suggestionStatusDropdown').val(suggestionStatus).show()
+        $('.modal-title').html('Edit Suggestion')
+        $('span:contains("Remarks")').show();  // Show the "Remarks" title
+        $('span:contains("Status")').show(); 
+    
+    })
+    // add suggestion
+    $('#add_suggestion_link').click(function(event){
+        var suggestionId = null;
+        var suggestion = ""
+        $('#suggestion').val('').prop('readonly',false)
+        $('#suggestionId').val(suggestionId)
+        $('#suggestionStatusDropdown').val("Open").hide()
+        $('#remarksField').val('').hide();  
+        $('.modal-title').html('Add Suggestion');
+        // $('label span').hide();
+        $('span:contains("Status")').hide();
+        $('span:contains("Remarks")').hide(); 
+    })
+
+    //Common modal close
+    $('.cancelButton').on("click",function() {
+        $('#infoModal').modal('hide');
+        $('#warningModal').modal('hide');
+    })
+    <!-- templates/myapp/my_template.html -->
+
+
+</script>
+{% endblock %} 

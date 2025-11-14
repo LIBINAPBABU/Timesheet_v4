@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %} Login {% endblock %}
+{% load static %}
+    {% block body %}
+    <section class="vh-100">
+        <div class="container-fluid h-custom">
+            <div class="row d-flex justify-content-center align-items-center vh-100">
+                <div class="col-md-9 col-lg-6 col-xl-5"> 
+                    <img src="{% static '/images/Untitled-2.png'%}" class="img-fluid" alt="Sample image">
+                </div>
+                <div class="col-md-6 col-lg-3 col-xl-2 offset-xl-1 mt-5">
+                    <div class="mb-3 text-center">
+                        <img src="{% static '/images/icpro.png'%}" alt="Sample image" class="img-fluid" style="width: 75%;"/>   
+                    </div>
+                    <form action="{% url 'login_view' %}" method="POST">
+                    {% csrf_token %}
+                        <!-- Username input -->
+                        <div data-mdb-input-init class="form-outline mb-3">
+                        <input type="text" name="username" class="form-control" value="{{username}}"
+                            placeholder="Enter a valid Employee ID" />
+                        <label class="form-label" for="form3Example3">Employee ID</label>
+                        </div>
+
+                        <!-- Password input -->
+                        <div data-mdb-input-init class="form-outline mb-3">
+                            <input type="password"  name="password" value="{{password}}" class="form-control" placeholder="Enter password" />
+                            <label class="form-label" for="form3Example4">Password</label>
+                        </div>
+
+                        <div class="text-center text-lg-start ">
+                            <button type="submit" name="submit" class="btn btn-info form-control text-capitalize" style="padding-left: 2.5rem; padding-right: 2.5rem;">Login</button>
+                        </div>
+                        <label class="text-danger">
+                            {% for message in messages %}
+                                {{message}}
+                            {% endfor %}
+                        </label>
+                        <div class="text-center">
+                            <a href="{% url 'reset_password' %}" class="small">Forgot password?</a>
+                        </div>
+                    </form>
+                </div>                                          
+            </div> 
+        </div>                                             
+    </section>
+    {% endblock %}

@@ -1,0 +1,306 @@
+{% extends "topNav.html" %} {% block title %}Time{% endblock %}
+
+{% block time_analysis_active %}active{% endblock %} 
+
+{% block Head %}
+<style>
+    .overviewCard:hover {
+        transform: scale(1.025);
+    }
+    
+    .icon {
+        font-size: 1.2rem;
+        margin-right: 8px;
+    }
+    .text-delta {
+        font-weight: bold;
+    }
+    .chartdiv{
+        width: 35dvh; 
+        height: 28dvh;
+    }
+    @media (max-width: 1366px) {
+        .chartdiv{
+            width: 38dvh; 
+            height: 31.3dvh;
+        }
+    }
+    @media (min-width: 1367px) and (max-width: 1600px) {
+        .chartdiv{
+            height: 28.9dvh;
+        }
+    }
+    .carousel-control-prev-icon,
+    .carousel-control-next-icon {
+        background-color: rgb(171, 171, 184);
+        border-radius: 4px;
+        font-size: 2rem; /* Increase this value to make the icons bigger */
+        width: 3rem; /* Optional: control the size of the icon */
+        height: 3rem; /* Optional: control the size of the icon */
+    }
+</style>
+
+
+{% endblock %}
+
+{% block main-content %}
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center row" >
+            <div class="col-6 col-md-4 col-lg-3 ">
+               <i class="fas fa-hourglass-start me-1"></i><strong>Budget vs Actual Hours Overview / Projects</strong>
+            </div>
+            <div class="col-6 col-md-4 col-lg-9 ">
+                <!-- <form class="Task_Analysis" action="/analysis/task_Analysis/" method="POST">
+                    {% csrf_token %} -->
+                    <div class="row justify-content-end">
+                        <!-- all projects -->
+                        <div class="col-12 col-md-8 col-lg-4 ">
+                            <label class="form-group border-lable-flt">
+                                <select class="form-control custom-select selectpicker" name="project" id="project" data-live-search="true">
+                                    <option value="all">All Projects</option>
+                                        {% for project in data %}
+                                            <option value="{{ project.name }}">{{ project.name }}</option>
+                                        {% endfor %}
+                                </select>
+                                <span><i class="fas fa-filter"></i> Projects</span>
+                            </label>
+                        </div> 
+                        <!-- <div class="col-6 col-md-4 col-lg-2" >
+                            <button type="submit" class="form-control bg-info">SUBMIT</button> 
+                        </div> -->
+                    </div>     
+                <!-- </form> -->
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body bg-dark">
+            <div id="projectCarousel" class="carousel slide" data-bs-ride="false">
+                <div class="carousel-inner" id="project-container"></div>
+            </div>
+            <a class="carousel-control-prev" href="#projectCarousel" style="width:5%;" role="button" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="sr-only">Previous</span>
+            </a>
+            <a class="carousel-control-next" href="#projectCarousel" role="button" style="width:5%;" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="sr-only">Next</span>
+            </a>
+        </div>
+        <!-- <div class="card-footer text-center">
+            <button class="btn btn-primary me-2" type="button" data-bs-target="#projectCarousel" data-bs-slide="prev">
+                <i class="fas fa-arrow-left"></i> Previous
+            </button>
+            <button class="btn btn-primary" type="button" data-bs-target="#projectCarousel" data-bs-slide="next">
+                Next <i class="fas fa-arrow-right"></i>
+            </button>
+        </div> -->
+    </div>   
+</div>
+<!-- actualvsbudget hours model -->
+<div class="modal fade" id="actualVsBudgetModel" aria-labelledby="actualVsBudget_modal" aria-hidden="true" >
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel" >Budget vs Actual Hours Overview / Tasks</h5>
+                <button type="button" class="btn-close modalCancelButton" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table  class="dataTable display compact cell-border" id="budgetActualHrsTable" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <!-- <th>Quotation</th> -->
+                            <th>Task Name</th>
+                            <th>Employees</th>
+                            <th>Actual</th>
+                            <th>Budget</th>
+                            <th>Delta</th>
+                            <th>Variance</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const projects = {{ data|safe }};
+        const container = document.getElementById("project-container");
+        const projectDropdown = document.getElementById("project");
+
+        function createCarouselItems(filteredProjects) {
+            container.innerHTML = "";  // Clear previous items
+            let carouselItem;
+
+            filteredProjects.forEach((project, index) => {
+                if (index % 6 === 0) { // Creating a new carousel item every 6 projects
+                    carouselItem = document.createElement("div");
+                    carouselItem.className = `carousel-item ${index === 0 ? 'active' : ''}`;
+                    const row = document.createElement("div");
+                    row.className = "row g-3 justify-content-center";
+                    carouselItem.appendChild(row);
+                    container.appendChild(carouselItem);
+                }
+
+                const chartId = `chart-${project.name.replace(/\s+/g, '-')}`;
+                const card = document.createElement("div");
+                card.className = "col-md-4";
+                card.innerHTML = `
+                    <div class="card overviewCard shadow-sm p-2">
+                        <div class="card-header">
+                            <h6 class="mb-0 text-truncate"><i class="fas fa-project-diagram"></i> ${project.name}</h6>
+                        </div>
+                        <div class="card-body d-flex align-items-center justify-content-between">
+                            <div class="d-flex flex-column align-items-center">
+                                <div class="d-flex justify-content-center align-items-center" style="color: ${project.delta <= 0 ? '#4CAF50' : '#FF5252'};">
+                                    <h5 class="fw-bold d-flex align-items-center" >
+                                        ${project.delta >= 0 ? 'Over Budget' : 'Under Budget'}
+                                    </h5>
+                                    <h5 class="fw-bold ms-1">
+                                        ( ${project.percent > 0 ? '+' : ''}${project.percent}% )
+                                    </h5>
+                                </div>
+
+                                <small class="text-muted"><u>Delta</u></small>
+                                <h4 class="fw-bold d-flex align-items-center mb-0" style="color: ${project.delta <= 0 ? '#4CAF50' : '#FF5252'};">
+                                    <i class="fas ${project.delta >= 0 ? 'fa-caret-up' : 'fa-caret-down'} fa-2x me-2"></i> 
+                                    ${project.delta >= 0 ? '+' : ''}${project.delta} hrs
+                                </h4>
+                                <div class="d-flex mb-2">
+                                    <small class="text-muted">No Employees :</small>
+                                    <h5 class="fw-bold ps-1">${project.employee_count}</h5>
+                                </div>
+                                
+                                <div class="d-flex align-items-center text-nowrap">
+                                    <div class="text-center me-3 text-primary">
+                                        <h6 class="text-muted"><u>Budget Hours</u></h6>
+                                        <p class="fw-bold m-0">${project.budget} hrs</p>
+                                    </div>
+                                    <div class="vr"></div>
+                                    <div class="text-center ms-3 text-info">
+                                        <h6 class="text-muted"><u>Actual Hours</u></h6>
+                                        <p class="fw-bold m-0">${project.actual} hrs</p>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary mt-2 btn-sm taskView" style="text-transform: none;font-size: 1rem;" type="button" data-bs-toggle="modal" data-bs-target="#actualVsBudgetModel" quotationNum=${project.quotation_no}>Task View</button>
+                            </div>
+                            <div class="d-flex justify-content-center chartdiv">
+                                <canvas id="${chartId}"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                carouselItem.firstChild.appendChild(card);
+
+                setTimeout(() => {
+                    const ctx = document.getElementById(chartId).getContext("2d");
+                    new Chart(ctx, {
+                        type: 'polarArea',
+                        data: {
+                            labels: ["Budget", "Actual"],
+                            datasets: [{
+                                data: [project.budget, project.actual],
+                                backgroundColor: [
+                                    "rgba(108, 142, 191, 0.6)",  // Budget color (fixed)
+                                    project.actual - project.budget < 0 ? "rgba(0, 200, 0, 0.6)" : "rgba(200, 0, 0, 0.6)" // Green if negative delta, Red if positive
+                                ],
+                                borderWidth: 2,
+                                borderColor: "#fff"
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                r: {
+                                    suggestedMin: 0,
+                                    suggestedMax: Math.max(project.budget, project.actual) + 10,
+                                    grid: { color: "rgba(0, 0, 0, 0.2)" },
+                                    ticks: { color: "#333", backdropColor: "transparent" }
+                                }
+                            },
+                            plugins: {
+                                legend: { display: true },
+                                tooltip: { enabled: true }
+                            }
+                        }
+                    });
+                }, 200);
+            });
+        }
+
+        // Initially populate carousel with all projects
+        createCarouselItems(projects);
+
+        // Filter event listener
+        projectDropdown.addEventListener("change", function () {
+            const selectedProject = this.value;
+            const filteredProjects = selectedProject === "all" ? projects : projects.filter(p => p.name === selectedProject);
+            createCarouselItems(filteredProjects);
+        });
+    });
+    $(document).on('click', '.taskView', function()  {
+        quotationNum = $(this).attr("quotationNum");
+        $.ajax({
+            url: "{% url 'timeBudgetAnalysis' %}",
+            type:'POST',
+            data:{quotationNum:quotationNum},
+            success: function(response) {
+                actualBudgetLoadTable(response.taskWiseData)
+            }
+        })
+
+    })
+    function actualBudgetLoadTable(taskwiseActualBudgetData){
+        var table = $('#budgetActualHrsTable').DataTable({
+            data:taskwiseActualBudgetData,
+            order: [
+                    [0, 'desc']
+                ],
+            columns: [
+                // {data:'quotation'}, 
+                {data:'taskName'},
+                {data:'emp_count'},
+                {data:'act_hrs'},
+                {data:'bdg_hrs'},
+                {data:null,
+                    render: function(data, type, row) {
+                        delta = data.act_hrs - data.bdg_hrs ;
+                        return delta; 
+                    },
+                },
+                {data:null,
+                    render: function(data, type, row) {
+                        if(data.bdg_hrs !== 0){
+                            variance = ((data.act_hrs - data.bdg_hrs)/data.bdg_hrs)*100 ;
+                            return (Math.round(variance*100)/100).toFixed(2)+"%"; 
+                        }
+                        else{
+                            return data.act_hrs+"%";
+                        }
+                    },
+                }
+            ],
+            "fnRowCallback": function(nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                if (parseInt($(nRow).find('td:eq(5)').text()) > 0) {
+                    $('td', nRow).addClass('text-danger');
+                }
+                //  else {
+                //     $('td', nRow).addClass('text-success');
+                // } 
+            },
+            columnDefs :[ { className : "text-nowrap",targets:[0,1]},
+            { className : "text-center",targets:[2,3,4]}],
+            searching: false,
+            paging: false,
+            responsive: true,
+            destroy: true,
+            ordering:false
+        })
+    }
+</script>
+{% endblock %}

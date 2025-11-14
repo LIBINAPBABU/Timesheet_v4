@@ -1,0 +1,161 @@
+{% extends "topNav.html" %}
+
+{% block title %}Employee Analysis{% endblock %}
+{% block all_employee_active %}active{% endblock %}
+{% block Head %}
+<style>
+    #chartdiv {
+        width: 100%;
+        height: 81dvh;
+    }
+</style>
+<script src="https://cdn.amcharts.com/lib/4/core.js"></script>
+<script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
+<script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
+<script> 
+    am4core.ready(function() {
+    // Themes begin
+    am4core.useTheme(am4themes_animated);
+    // Themes end
+    
+    // Create chart instance
+    var chart = am4core.create("chartdiv", am4charts.XYChart);
+    
+    //scroller
+    chart.scrollbarX = new am4core.Scrollbar();
+    chart.logo.dispose();
+    // Add data
+    chart.data ={{data|safe}};
+    
+    // Create axes
+    var categoryAxis = chart.xAxes.push(new am4charts.CategoryAxis());
+    categoryAxis.dataFields.category ="uid__first_name";
+    categoryAxis.renderer.grid.template.location = 0;
+    
+    var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+    valueAxis.renderer.inside = true;
+    valueAxis.renderer.labels.template.disabled = true;
+    valueAxis.min = 0;
+    valueAxis.extraMax = 0.1;
+    valueAxis.calculateTotals = true;
+    valueAxis.title.text = "Worked Hours";
+    // style
+    
+    categoryAxis.renderer.minGridDistance = 10;
+    categoryAxis.renderer.labels.template.vhorizontalCenter = "right";
+    categoryAxis.renderer.labels.template.verticalCenter = "middle";
+    categoryAxis.renderer.labels.template.rotation = 270;
+    
+    var label = categoryAxis.renderer.labels.template;
+    label.maxWidth = 200;
+    label.wrap = true;
+    
+    // Create series
+    function createSeries(field,p_name) {
+      // Set up series
+      var series = chart.series.push(new am4charts.ColumnSeries());
+      series.name = p_name;
+     
+      series.dataFields.valueY = field;
+      series.dataFields.categoryX = "uid__first_name";
+      
+      // Make it stacked
+      series.stacked = true;
+    
+      // style
+      series.columns.template.column.fillOpacity = 0.8;
+      
+      // Configure columns
+      series.columns.template.width = am4core.percent(75);
+      series.columns.template.tooltipText = p_name +" [/]\n[font-size:14px]{categoryX}:{valueY}";
+      
+      // Add label
+      var labelBullet = series.bullets.push(new am4charts.LabelBullet());
+      labelBullet.locationY = 0.5;
+      labelBullet.label.hideOversized = true;
+      
+      return series;
+    }
+    // call series function
+    $.each({{project_List|safe}},function(index,obj)
+    {
+        let seriesLabel = obj.projectName_!='N/A' ? obj.quotation + " - " + obj.projectName_ : obj.quotation;
+        createSeries(obj.quotation,seriesLabel)
+    });
+    
+    // Create series for total
+    var totalSeries = chart.series.push(new am4charts.ColumnSeries());
+    totalSeries.dataFields.valueY = "none";
+    totalSeries.dataFields.categoryX ="uid__first_name";
+    totalSeries.stacked = true;
+    totalSeries.hiddenInLegend = false;
+    totalSeries.columns.template.strokeOpacity = 0;
+    
+    var totalBullet = totalSeries.bullets.push(new am4charts.LabelBullet());
+    totalBullet.dy = -20;
+    totalBullet.label.text = "{valueY.total}";
+    totalBullet.label.hideOversized = false;
+    totalBullet.label.fontSize = 12;
+    totalBullet.label.background.fill = totalSeries.stroke;
+    totalBullet.label.background.fillOpacity = 0.2;
+    totalBullet.label.rotation = 270;
+    
+    });
+     
+</script>
+ 
+{% endblock %}
+     
+{% block main-content %}
+     <!-- Worked hours -->
+    <div class="card">
+        <div class="card-header">
+            <div class="justify-content-between row" >
+                <div class="col-6 col-md-2 col-lg-2">
+                    <i class="fas fa-chart-bar me-1"></i><strong>Employees Analysis</strong>
+                </div>
+                <div class="col-6 col-md-2 col-lg-9">
+                    <form class="timesheet_analysis " action="/analysis/all-timesheet-analysis/" method="POST">
+                        {% csrf_token %}
+                        <div class="row justify-content-end">
+                        
+                            <div class="col-12 col-md-6 col-lg-2">
+                                <label class="form-group border-lable-flt">
+                                    <select class="form-control custom-select" name="project" id="project" value="project" >
+                                        <option value="allProjects">All Project</option>  
+                                        {% for quotation in pro_name%}
+                                            <option value="{{quotation.quotation_no}}">{{quotation.quotation_no}}{% if quotation.project__name %} - {{quotation.project__name}} {% endif %}</option>
+                                        {% endfor %}
+                                    </select> <span><i class="fas fa-filter"></i>Project</span>
+                                </label>
+                            </div>
+                            <div class="col-6 col-md-6 col-lg-2">
+                                <div class="form-outline">
+                                    <input type="date"  class="form-control"  name="from_date" value="{{from_date|safe}}" />
+                                    <label class="form-label" for="From_date"><i class="fas fa-filter"></i>From</label>
+                                </div> 
+                            </div>
+                            <div class="col-6 col-md-6 col-lg-2">
+                                <div class="form-outline">
+                                    <input type="date"  class="form-control"  name="to_date" value="{{to_date|safe}}"  required />
+                                    <label class="form-label" for="To_date"><i class="fas fa-filter"></i>To</label>
+                                </div> 
+                            </div>
+                        <div class="col-6 col-md-4 col-lg-2" >
+                            <button type="submit" class="form-control bg-info" >SUBMIT</button> 
+                        </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="chartdiv"></div>
+        </div>
+        </div>
+<script>
+    $(document).ready(function(){
+        $('#project').val('{{selectedProject|safe}}')
+    });
+</script>
+{% endblock %}  

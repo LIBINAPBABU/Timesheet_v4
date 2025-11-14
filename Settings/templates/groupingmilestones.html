@@ -1,0 +1,155 @@
+{% extends "topNav.html" %}
+
+{% block title %}list Templates{% endblock %}
+
+{% block costcategorygrouping_active %}active{% endblock %}
+{% block Head %}
+<style>
+    .list-group { height:78.7dvh;}
+    @media (max-width: 1366px) {
+        .list-group { height:80.1dvh;}
+    }
+    @media (min-width: 1367px) and (max-width: 1600px) {
+        .list-group { height:79.5dvh;}
+    }
+</style>
+{% endblock %}
+{% block main-content %}
+    <div class="card">
+        <div class="card-header d-flex justify-content-between col-12">
+            <div class="col-10">
+                <i class="fas fa-table"></i> <strong>Group Milestones</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center col-2">
+                <label class="form-group border-lable-flt col-12">
+                    <select class="form-control" id="projectTypeDropdown">
+                        {% for item in dropdownPhases %}
+                            <option value="{{ item.id }}">{{ item.name }}</option>
+                        {% endfor %}
+                    </select><span>phases type</span>
+                </label>
+            </div>
+        </div>
+        <div class="card-body d-flex">
+            <div class="container" id="costCategoryList">
+                <strong>ERP Category</strong>
+            </div>
+            <div class="container d-flex flex-column align-items-center justify-content-center bg-body" style="width: auto;">
+                <svg xmlns="http://www.w3.org/2000/svg" id="moveToRight" width="36" height="36" fill="currentColor" class="bi bi-arrow-right-square-fill mb-1" viewBox="0 0 16 16">
+                    <path d="M0 14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2a2 2 0 0 0-2 2zm4.5-6.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5a.5.5 0 0 1 0-1"/>
+                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" id="moveToLeft" width="36" height="36" fill="currentColor" class="bi bi-arrow-left-square-fill mt-1 " viewBox="0 0 16 16">
+                    <path d="M16 14a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2zm-4.5-6.5H5.707l2.147-2.146a.5.5 0 1 0-.708-.708l-3 3a.5.5 0 0 0 0 .708l3 3a.5.5 0 0 0 .708-.708L5.707 8.5H11.5a.5.5 0 0 0 0-1"/>
+                </svg>
+            </div>
+            <div class="container" id="groupedcostCategoryList">
+        </div>
+    </div>
+    <script>
+        $(document).ready( function () {
+
+            getData()
+
+            // Handling the button click to add active class
+            $(document).on('click', '.list-group-item', function (e) {
+                // Add active class to the clicked item
+                $(this).toggleClass('active');
+            });
+
+            // Handle the "Move To Right" button click
+            $('#moveToRight').click(function() {
+                moveSelectedItemsToRight();
+            });
+
+            // Handle the "Move To Right" button click
+            $('#moveToLeft').click(function() {
+                moveSelectedItemsToLeft();
+            });
+
+        }); 
+
+        function getData(){
+            $.ajax({
+                url: "{% url 'getListData' %}",
+                type:'GET',
+                success: function(json) {
+                    load_listdata(json.costCategoryList,json.groupedcostCategoryList)
+                },
+                dataType: "json"
+            });
+        }  
+
+        function postData(data){
+            $.ajax({
+                url: "{% url 'getListData' %}",
+                type:'POST',
+                data:data,
+                success: function(json) {
+                    load_listdata(json.costCategoryList,json.groupedcostCategoryList)
+                },
+                dataType: "json"
+            });
+        }  
+
+        function load_listdata(costCategoryList,groupedcostCategoryList){
+            var selectedGroup = $('#projectTypeDropdown option:selected').text()
+            $('#costCategoryList').children('ul').remove();
+            $('#groupedcostCategoryList').empty();
+            var k='<ul id="list1" class="list-group" style="overflow-y: auto;">'
+            var l='<strong>'+selectedGroup+' Category</strong><ul id="list2" class="list-group" style="overflow-y: auto;">'
+
+            // Convert grouped cost categories into a map for faster lookup
+            var groupedMap = {};
+            $.each(groupedcostCategoryList, function(index, value) {
+                groupedMap[value['category']] = value;
+            });
+
+            // Loop through the costCategoryList to separate them into the two lists
+            $.each(costCategoryList, function(index, item) {
+                // Check if this item has a corresponding entry in groupedcostCategoryList
+                if (groupedMap[item['id']]) {
+                    l += `<li class="list-group-item py-0" data-id="${item['id']}">${item['name']}</li>`;
+                } else {
+                    k += `<li class="list-group-item py-0" data-id="${item['id']}">${item['name']}</li>`;
+                }
+            });
+
+            k += `</ul>`;
+            $('#costCategoryList').append(k);
+            l += `</ul>`;
+            $('#groupedcostCategoryList').append(l);
+        }
+
+        $("#projectTypeDropdown").on("change", function() {
+            var projectType = $(this).val()
+            postData({type:projectType})
+        })
+
+        // Function to get all active items from #list1 
+        function moveSelectedItemsToRight() {
+            var list1_activeIds = [];
+            // Get all active items from #list1
+            $('#list1 .list-group-item.active').each(function() {
+                // Get the data-id attribute of the active item
+                var dataId = $(this).data('id');
+                list1_activeIds.push(dataId); // Store the data-id in the array
+            });
+            selectedGroup = $("#projectTypeDropdown").val()
+            postData({type:selectedGroup,list1_activeIds:JSON.stringify(list1_activeIds)})
+        }
+
+        // Function to get all active items from #list2
+        function moveSelectedItemsToLeft() {
+            var list2_activeIds = [];
+            // Get all active items from #list2
+            $('#list2 .list-group-item.active').each(function() {
+                // Get the data-id attribute of the active item
+                var dataId = $(this).data('id');
+                list2_activeIds.push(dataId); // Store the data-id in the array
+            });
+            selectedGroup = $("#projectTypeDropdown").val()
+            postData({type:selectedGroup,list2_activeIds:JSON.stringify(list2_activeIds)})
+
+        }
+</script>
+{% endblock %}

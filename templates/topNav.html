@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="bg-black bg-opacity-10 tasksubmit">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white  py-1 px-2 " >
+        <div class="container-fluid">
+            <img src="/static/images/icpro.png" height="32dvh" >
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="bi bi-list"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-lg-0 ms-4">
+                    <li class="nav-item">
+                        <a class="nav-link {% block home_active %}{% endblock %}" href="{% url 'index' %}">
+                            <i class="bi bi-house-fill"></i> Home
+                        </a>
+                    </li>
+                        {% if module == "timesheet" %} 
+                            {% if "Timesheet" in pageData %}     
+                                <li class="nav-item">
+                                    <a class="nav-link {% block submission_active %}{% endblock %}" href="{% url 'submission' %}">
+                                        <i class="bi bi bi-calendar3"></i> Timesheet
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% if "Approval" in pageData %}
+                                <li class="nav-item">
+                                    <a class="nav-link {% block approval_active %}{% endblock %}" href="{% url 'allTimesheetLog' %}">
+                                        <i class="bi bi-calendar2-check"></i> Approval
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endif %}
+                        {% if module == "document" %}
+                            {% if "Documents" in pageData %}
+                                <li class="nav-item">
+                                    <a class="nav-link {% block documents_active %}{% endblock %}" href="{% url 'Documents' %}">
+                                        <i class="bi bi-file-earmark-post"></i> Documents
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% if "Lesson Learnt" in pageData %}
+                                <li class="nav-item">
+                                    <a class="nav-link {% block lesson_active %}{% endblock %}" href="{% url 'lesson' %}">
+                                        <i class="bi bi-file-text-fill"></i> Lesson Learnt
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% if "Suggestion Box" in pageData %}
+                                <li class="nav-item">
+                                    <a class="nav-link {% block suggestion_active %}{% endblock %}" href="{% url 'suggestion' %}">
+                                        <i class="bi bi-file-text-fill"></i> Suggestion Box
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endif %}
+                        {% if module == "analysys" %}
+                            {% if "User Overview" in pageData %}
+                                <li class="nav-item">
+                                    <a class="nav-link {% block dashboard_active %}{% endblock %}" href="{% url 'timesheet_analysis' %}">
+                                        <i class="bi bi-pie-chart-fill"></i> User Overview
+                                    </a>
+                                </li>
+                            {% endif %} 
+                            {% if "Budget vs Actual Overview" in pageData %}
+                                <li class="nav-item">
+                                    <a class="nav-link {% block time_analysis_active %}{% endblock %}" href="{% url 'timeBudgetAnalysis' %}">
+                                        <i class="bi bi-hourglass-split"></i> Budget vs Actual Overview
+                                    </a>
+                                </li>
+                            {% endif %} 
+                            {% if "Project Overview" in pageData %}
+                                <li class="nav-item">
+                                    <a class="nav-link {% block project_analysis_active %}{% endblock %}" href="{% url 'all-project-analysis' %}">
+                                        <i class="bi bi-file-earmark-bar-graph"></i> Project Overview
+                                    </a>
+                                </li>
+                            {% endif %} 
+                            {% if "Task Overview" in pageData %}
+                                <li class="nav-item">
+                                    <a class="nav-link {% block task_active %}{% endblock %}" href="{% url 'task_Analysis' %}">
+                                        <i class="bi bi-bar-chart-steps"></i> Task Overview
+                                    </a>
+                                </li>
+                            {% endif %} 
+                            {% if "Status Overview" in pageData %}
+                                <li>
+                                    <a class="nav-link {% block overall_timesheet_active %}{% endblock %}" href="{% url 'OverallTimesheetLog' %}">
+                                        <i class="bi bi-speedometer"></i> Status Overview
+                                    </a>
+                                </li>
+                            {% endif %} 
+                            {% if "Timesheet Status" in pageData %}
+                                <li class="nav-item">
+                                    <a class="nav-link {% block weeklyTimesheetStatus_active %}{% endblock %}" href="{% url 'weeklyTimesheetStatus' %}">
+                                        <i class="bi bi-calendar2-week"></i> Timesheet Status
+                                    </a>
+                                </li>  
+                            {% endif %} 
+                        {% endif %}
+                        {% if module == "project" %}
+                            {% if "Projects" in pageData %}
+                                <li class="nav-item">
+                                    <a class="nav-link {% block projectlist_active %}{% endblock %}" href="{% url 'getProjectDetails' %}">
+                                        <i class="bi bi-stack"></i> Projects
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endif %}
+                        {% if module == "usermanagement" %}
+                            {% if "Users" in pageData %}
+                                <li class="nav-item">
+                                    <a class="nav-link {% block employees_active %}{% endblock %}" href="{% url 'employeeDetails' %}">
+                                        <i class="bi bi-people-fill"></i> Users
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% if "Usermanagement Settings" in pageData %}
+                                <li class="nav-item">
+                                    <a class="nav-link {% block userManagementSettings_active %}{% endblock %}" href="{% url 'getUserManagementSettings' %}">
+                                        <i class="bi bi-person-fill-gear"></i> Usermanagement Settings
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% if "User Permissions" in pageData %}
+                                <li class="nav-item">
+                                    <a class="nav-link {% block userpermissions_active %}{% endblock %}" href="{% url 'userPermissions' %}">
+                                        <i class="bi bi-person-fill-check"></i> User Permissions
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endif %}
+                        {% if module == "settings" %}
+                            {% if "Templates" in pageData %}
+                                <li class="nav-item">
+                                    <a class="nav-link {% block template_active %}{% endblock %}" href="{% url 'list-templates' %}">
+                                        <i class="bi bi-layout-text-window-reverse"></i> Templates
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% if "Grouping Tasks" in pageData %}
+                                <li class="nav-item">
+                                    <a class="nav-link {% block costcategorygrouping_active %}{% endblock %}" href="{% url 'groupingCostCategory' %}">
+                                        <i class="bi bi-diagram-2"></i> Grouping Tasks
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endif %}
+                </ul>
+                <div class="d-flex">
+                    <ul class="navbar-nav">
+                        <li id="date-time" class=" me-2"> </li>
+                        <!-- <li><a href="{% url 'logout' %}">{{request.user.first_name}}<i class="bi bi-power "></i></a></li> -->
+                    </ul>
+                </div>
+        
+                <div class="dropdown">
+                    <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person" viewBox="0 0 16 16">
+                            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
+                          </svg>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li><span class="dropdown-item-text fw-bold">{{ request.user.first_name }}</span></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#">JobTitle: {{ request.user.jobtitle.group.name }} {{ request.user.jobtitle.role.name }}</a></li>
+                        <li><a class="dropdown-item" href="#">Designation: {{ request.user.designation }}</a></li>
+                        <li><a class="dropdown-item" href="#">Reporting To: {{ request.user.reporting_to.first_name }}</a></li>
+                        <li><a class="dropdown-item" href="#">Email: {{ request.user.email }}</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">Log Out<span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-box-arrow-right" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0z"/>
+                                <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"/>
+                              </svg>
+                            </a></span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <main id="layoutSidenav_content">
+        <div class="container-fluid mt-1 px-1" id="main_content">
+            {% block main-content %}This is Main content Area{% endblock %}
+        </div>
+    </main>
+</div>
+{% endblock %}

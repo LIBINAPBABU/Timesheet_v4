@@ -1,0 +1,186 @@
+{% extends "topNav.html" %}
+
+{% block title %}Documents{% endblock %}
+{% block documents_active %}active{% endblock %}
+
+{% block main-content %}
+<div class="card ">
+    <div class="card-header">
+        <i class="fas fa-table"></i> <strong>Documents</strong>
+        <span style="float: right;"><a href="" data-bs-toggle="modal" data-bs-target="#Add_document" style="color:rgb(9, 139, 172); ;">+ Add Document</a> </span>
+    </div>
+    <div class="card-body">
+        <table  class="datatable display nowrap compact cell-border" style="width: 100%;">
+            <thead>
+                <th>#</th>
+                <th>Document Name</th>       
+                <th>File Name</th>                    
+                <th>Updated Date</th>
+                <th>Version</th>  
+                <th><i class="fas fa-file-download"></i></th>
+                {% if user.role != 'Employee' %} 
+                <th style="text-align: center;"><i class="fas fa-file-upload"></i></th>
+                <th style="text-align: center;"> Delete </th>
+                {% endif %}
+            <th style="display: none;">id</th>
+            </thead>
+            <tbody>
+                {% for document in Documents %}
+                <tr>
+                    <td>{{forloop.counter}}</td>
+                    <td>{{document.document_name}}</td>                                        
+                    <td>{{document.file|cut:"document/"}}</td>                 
+                    <td>{{document.updated_date}}</td>
+                    <td>{{document.version}}</td>
+                    <td><a href="{{document.file.url}}" download =""><i class="fa fa-download"></i></a></td>
+                    {% if user.role != 'Employee' %} 
+                        <td style="text-align: center;"><i class="upload fa fa-upload" data-bs-toggle="modal" data-bs-target="#Upload_File"></i></td>
+                        <td style="text-align: center;" ><a href="/documents/delete-document/{{document.id}}" onclick="return confirm('Delete {{document.document_name}} ? ')"><i class="fas fa-trash-alt" style="color: red;" aria-hidden="true"></i></a></td>      
+                    {% endif %}
+                    <td style="display: none;">{{document.id}}</td>
+                </tr>
+                {% endfor %}   
+            </tbody>
+        </table>
+    </div>
+</div>   
+  
+<!--  Add document Modal -->
+<div class="modal fade" id="Add_document" tabindex="-1" aria-labelledby="Employee_Modal" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header ">
+                <h5 class="modal-title" id="exampleModalLabel" >Add document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/documents/add-document/" enctype="multipart/form-data"  method="POST" autocomplete="off">
+                    {% csrf_token %}
+                    <div class="col-12">                        
+                            <!--document name  -->
+                        <div class="row"> 
+                            <div class="col-md-12 col-12">
+                                <div class="form-outline mb-2">
+                                    <input type="text" class="form-control" id="document_name" name="document_name"  value="{{form.document_name.value|safe}}" required>
+                                    <label class="form-label" for="document_name">Document Name</label>
+                                </div>
+                            </div>                                        
+                        </div>  
+                            <!-- updated date -->
+                        <div class="row">
+                            <div class="col-md-6 col-8">
+                                <div class="form-outline mb-2">
+                                    <input type="date" class="form-control" name="updated_date" id="updated_date"  value="{{date|safe}}" required>
+                                    <label class="form-label" for="sub_date">Updated Date</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-4">
+                                <div class="form-outline mb-2">
+                                    <input type="text" class="form-control" name="version" id="version" value="{{form.version.value|safe}}" required>
+                                    <label class="form-label" for="version">Version</label>
+                                </div>
+                            </div> 
+                        </div>                                   
+                            <!-- fileupload -->
+                        <div class="row">
+                            <div class="col-md-12 col-12 mb-2">
+                                <input type="file" id="file" class="form-control" name="file" required>   <!-- {{ form.file }} -->                                          
+                            </div>                                       
+                        </div>
+                        <!-- submit -->
+                        <div class="row justify-content-end">
+                            <div class="col-md-6 col-6 mb-2">
+                                <button type="submit" class="form-control bg-info" >UPLOAD</button>     
+                            </div>                                         
+                        </div>                                
+                    </div>
+                </form>
+            </div>            
+        </div>
+    </div>
+</div>
+
+<!--Upload File -->
+<div class="modal fade" id="Upload_File" tabindex="-1" aria-labelledby="Employee_Modal" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header ">
+                <h5 class="modal-title" id="exampleModalLabel" >Upload File</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/documents/upload-file/" enctype="multipart/form-data"  method="POST" autocomplete="off">
+                    {% csrf_token %}
+                    <div class="col-12">                        
+                        <div class="row"> 
+                            <div class="col-md-12 col-12">
+                                <div class="form-outline mb-2">
+                                    <input type="text" class="form-control" id="upload_document_name" name="document_name" required>
+                                    <label class="form-label" for="document_name">Document Name</label>
+                                </div>
+                            </div>                                        
+                        </div>  
+                            <!-- updated date,version -->
+                        <div class="row">
+                            <div class="col-md-6 col-8">
+                                <div class="form-outline mb-2">
+                                    <input type="date" class="form-control" id="upload_updated_date" name="updated_date" value="{{date|safe}}" required>
+                                    <label class="form-label" for="sub_date">Updated Date</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-4">
+                                <div class="form-outline mb-2">
+                                    <input type="text" class="form-control" id="upload_version"  name="version" required>
+                                    <label class="form-label" for="version">Version</label>
+                                </div>
+                            </div>                                      
+                        </div>                                   
+                            <!-- fileupload -->
+                        <div class="row">
+                            <div class="col-md-12 col-12 mb-2">
+                                <input type="file" class="form-control" id="upload_file" name="file">   <!-- {{ form.file }} -->                                          
+                            </div>                                       
+                        </div>
+                        <!-- submit -->
+                        <div class="row justify-content-end">
+                            <div class="col-md-6 col-6 mb-2">
+                                <button type="submit" class="form-control bg-info">UPLOAD</button>     
+                            </div>                                         
+                        </div>                                
+                    </div>
+                </form>
+            </div>            
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready( function () { 
+        var scrollYValue = '69.5dvh'; // Default scroll value
+        // Check screen width
+        if ($(window).width() <= 1366) {
+            scrollYValue = '69.2dvh'; // Change scroll value when screen width is 1300px or less
+        } 
+        if ($(window).width() > 1367 & $(window).width() <= 1600) {
+            scrollYValue = '70.5dvh'; // Change scroll value when screen width is 1300px or less
+        }
+        var table = $('.datatable').DataTable({
+        ordering : false,
+        lengthMenu: [200,100,50,25,10],
+        scrollX: true,
+        scrollCollapse: true,
+        scrollY: scrollYValue,
+        responsive:true,
+        columnDefs: [
+            { 
+                className : "text-center",targets:[0,3,4,5]
+            },
+        ]}); 
+        table.on('click','tr .upload',function(){
+            $('#upload_document_name').val(table.row($(this).closest('tr')).data()[1]);            
+            $('#upload_version').val(table.row($(this).closest('tr')).data()[4]);
+            $('#id').val(table.row($(this).closest('tr')).data()[8]);              
+        }); 
+   });
+</script>
+{% endblock %}
