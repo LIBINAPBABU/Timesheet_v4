@@ -1152,10 +1152,15 @@
         tableHeaders += '<th style="width:39%" class="text-start"><strong><i class="fas fa-chevron-right me-2 toggleTableBody"></i>Others</strong></th>';
         tableHeaders += '<th style="width:10%" class="text-center"><strong></strong></th>';
         var nonProjecthrs = 0
+        var test = nonProjectdata[0].milestones[0]["workedHours"]
         $.each(nonProjectdata[0]['workedHours'], function(dayIndex, dayValue){
-            nonProjecthrs += dayValue
-            tableHeaders += '<th class ="py-1 px-1" style="width:6%"><input type="text" value="'+secondsToHm(dayValue)+'" class="form-control text-center fw-bold" readonly/></th>';
-            totalData[dayIndex] = (totalData[dayIndex] || 0) + dayValue;
+            othersMilestoneTotal = dayValue-test[dayIndex]
+            // nonProjecthrs += dayValue
+            // tableHeaders += '<th class ="py-1 px-1" style="width:6%"><input type="text" value="'+secondsToHm(dayValue)+'" class="form-control text-center fw-bold" readonly/></th>';
+            // totalData[dayIndex] = (totalData[dayIndex] || 0) + dayValue;
+            nonProjecthrs += othersMilestoneTotal
+            tableHeaders += '<th class ="py-1 px-1" style="width:6%"><input type="text" value="'+secondsToHm(othersMilestoneTotal)+'" class="form-control text-center fw-bold" readonly/></th>';
+            totalData[dayIndex] = (totalData[dayIndex] || 0) + othersMilestoneTotal;
         });
         tableHeaders +='<th class ="py-1 px-1" style="width:6%"><input type="text" value="'+secondsToHm(nonProjecthrs)+'" class="form-control text-center fw-bold" readonly/></th>'
         tableHeaders += '<th style="width:3%"></th>';

@@ -507,6 +507,9 @@ def prepare_context_task_data(user, start_date, end_date, current_date):
         
         # Non_project table data
         try:
+            filterargs = {}
+            if user.jobtitle_id not in excludejobTitleList:
+                filterargs['milestoneName'] = "Executive Leadership Team"
             non_project_milestones = Task.objects.annotate(
                 milestoneName=F('mid__name'),
                 milestone=F('mid__id'),
@@ -521,7 +524,9 @@ def prepare_context_task_data(user, start_date, end_date, current_date):
                 projectName=Value('Non project'),
                 asignedId=Value(0),
                 assignBy=Value(0)
-            ).values('milestoneName', 'milestone', 'quotation', 'projectName','project','taskName','task','asignedId','customerName','customprojectName','systemName','customerCode','assignBy').order_by('taskName')
+            ).values('milestoneName', 'milestone', 'quotation', 'projectName','project','taskName','task','asignedId','customerName','customprojectName','systemName','customerCode','assignBy')\
+            .exclude(**filterargs)\
+            .order_by('taskName')
             # logger.info(f"Fetched {len(non_project_milestones)} non-project milestones")
         except DatabaseError as e:
             logger.error(f"Error fetching non-project milestones: {e}")
