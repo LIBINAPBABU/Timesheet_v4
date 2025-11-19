@@ -1165,13 +1165,12 @@
         tableHeaders +='<th class ="py-1 px-1" style="width:6%"><input type="text" value="'+secondsToHm(nonProjecthrs)+'" class="form-control text-center fw-bold" readonly/></th>'
         tableHeaders += '<th style="width:3%"></th>';
         $('#nonProjectTable').append('<thead class="position-sticky top-0 bg-white"><tr>'+tableHeaders+'</tr></thead>');
-
         var k = '<tbody>' 
         var l = '<thead class="position-sticky top-0 bg-white">'
         $.each(nonProjectdata, function(nonprojectIndex, nonprojectValue){
             $.each(nonprojectValue['milestones'], function(milestoneIndex, milestoneValue){
                 var milestoneTotal=0
-                if (milestoneValue['milestoneName'] != "Management") {
+                if (milestoneValue['milestoneName'] != "Executive Leadership Team") {
                     k+='<tr class="milestoneRow m-'+milestoneValue["milestoneId"]+'" data-id='+milestoneValue["milestoneId"]+'>'
                     k+='<td ><i class="fas fa-chevron-right me-2 toggle"></i>'+milestoneValue['milestoneName']+'</td>'
                     k+='<td class ="py-1 px-1"></select></td>'
@@ -1198,8 +1197,8 @@
                 }
                 else{
                     l+='<tr>'
-                    l+='<th style="width:39%" class="text-start"><i class="fas fa-chevron-right me-2 toggleTableBody"></i>'+milestoneValue['milestoneName']+'</strong></th>'
-                    l+='<th style="width:10%" class="text-center"><strong></strong></th>'
+                    l+='<th style="width:39%" class="text-start"><strong><i class="fas fa-chevron-right me-2 toggleTableBody"></i>'+milestoneValue['milestoneName']+'</strong></th>'
+                    l+='<th style="width:10%" class="text-center"></th>'
                     $.each(milestoneValue['workedHours'], function(dayIndex, dayValue){
                         milestoneTotal+=dayValue
                         l+= '<th class ="py-1 px-1" style="width:6%"><input type="text" value="'+secondsToHm(dayValue)+'" class="form-control text-center fw-bold" readonly/></th>';
@@ -1343,6 +1342,9 @@
         if(hoursRestriction == false){
             $(".hours_").prop('disabled', false);
         }
+        // if(["","","",""].includes(request.user.jobtitle_id)){
+        //     $('#ManagementProjectTable thead').hide();
+        // }
     }
     
     //............toggle tbody 
