@@ -7,6 +7,9 @@
     .table-responsive {
         max-height: 69dvh;
     }
+    select option.option-disabled {
+        color: #e0dfdf;
+    }
 
     @media (max-width: 1366px) {
         .table-responsive {
@@ -137,14 +140,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
     $(document).ready(function () {
-        var currentYear = new Date().getFullYear();
-        $("#weekyear").val(currentYear);
-        $("#weekyear").focus();
-        $("#weekyear").datepicker({
-            format: "yyyy",
-            viewMode: "years",
-            minViewMode: "years"
-        });
         let getResponse
         let tabId = "submission"
         $.ajax({
@@ -152,10 +147,18 @@
             type: 'GET',
             dataType: 'json',
             success: function (response) {
+                // var currentYear = new Date().getFullYear();
+                $("#weekyear").val(response.year);
+                $("#weekyear").focus();
+                $("#weekyear").datepicker({
+                    format: "yyyy",
+                    viewMode: "years",
+                    minViewMode: "years"
+                });
                 getResponse = response
-                populateWeekDropdown(weekStartDropdown, response.current_week-8);
-                populateWeekDropdown(weekEndDropdown, response.current_week);
-                loadTblData(response.employees, "submission_status", response.year, response.current_week, currentYear, parseInt($('#weekStart').val()),parseInt($('#weekEnd').val()))
+                populateWeekDropdown(weekStartDropdown, response.DropDownWeekStart,response.DropDownWeekEnd);
+                populateWeekDropdown(weekEndDropdown, response.DropDownWeekStart,response.DropDownWeekEnd);
+                loadTblData(response.employees, "submission_status", response.year, response.current_week, response.year, parseInt($('#weekStart').val()),parseInt($('#weekEnd').val()))
                 $('#Empid').empty().append('<option value="">All Employees</option>');
                 $.each(response.employees, function(empId, empData) {
                     const name = empData.first_name || 'Unnamed';
@@ -199,13 +202,30 @@
         const weekStartDropdown = $("#weekStart").empty();
         const weekEndDropdown = $("#weekEnd").empty();
 
-        function populateWeekDropdown(dropdown, selectedWeek) {
-            for (let i = 1; i <= 52; i++) {
-                dropdown.append($('<option>', {
-                    value: i,
-                    text: `Week ${i}`,
-                    selected: i === selectedWeek
-                }));
+        function populateWeekDropdown(dropdown, selectedWeekStart, selectedWeekEnd) {
+            if(dropdown == weekStartDropdown)
+            {
+                for (let i = 1; i <= 52; i++) {
+                    dropdown.append($('<option>', {
+                        value: i,
+                        text: `Week ${i}`,
+                        selected: i === selectedWeekStart,
+                        class: i > selectedWeekEnd ? 'option-disabled' : '',
+                        disabled: i > selectedWeekEnd   // disable future weeks
+                    }));
+                }
+            }
+            else
+            {
+                for (let i = 1; i <= 52; i++) {
+                    dropdown.append($('<option>', {
+                        value: i,
+                        text: `Week ${i}`,
+                        selected: i === selectedWeekEnd,
+                        class: i < selectedWeekStart ? 'option-disabled' : '',
+                        disabled: i < selectedWeekStart   // disable future weeks
+                    }));
+                }
             }
         }
        
@@ -236,6 +256,7 @@
             );
             loadTblData(getResponse.employees, isSubmission ? 'submission_status' : 'approval_status', getResponse.year, getResponse.current_week, $("#weekyear").val(), parseInt($('#weekStart').val()),parseInt($('#weekEnd').val()));
         }
+       
         $("#submissionTab").on('click', () => switchTab('submission'));
         $("#approvalTab").on('click', () => switchTab('approval'));
     
@@ -408,7 +429,7 @@
                             k += '<th class="fw-bold text-center position-sticky top-0 start-0 bg-white" style="z-index: 10;"> Total Weeks "Not Applicable" </th>';
                         k += '</tr></thead><tbody>';
                             $.each(response.ConsolidatedSubmittedReport, function (empKey, empValue) {
-                                applicableweekCount = getApplicableCount(parseInt(weekYear),currentYear,getResponse.current_week,empValue['joinedYear'],empValue['joinedWeek'],empValue['resignedYear'],empValue['resignedWeek'],weekStart,weekEnd)
+                                applicableweekCount = getApplicableCount(parseInt(weekYear),getResponse.year,getResponse.current_week,empValue['joinedYear'],empValue['joinedWeek'],empValue['resignedYear'],empValue['resignedWeek'],weekStart,weekEnd)
                                 k += '<tr>'
                                 k += '<td>'+empValue['first_name']+'</td>'
                                 k += '<td>'+empValue['ontimecount']+'</td>'
@@ -429,18 +450,20 @@
                             k += '<th class="fw-bold text-center position-sticky top-0 start-0 bg-white" style="z-index: 10;"> Total Weeks "Not Applicable" </th>';
                         k += '</tr></thead><tbody>';
                             $.each(response.ConsolidatedSubmittedReport, function (empKey, empValue) {
-                                let applicableweekCount = getApplicableCount(parseInt(weekYear),currentYear,getResponse.current_week,empValue['joinedYear'],empValue['joinedWeek'],empValue['resignedYear'],empValue['resignedWeek'],weekStart,weekEnd)
+                                // let applicableweekCount = getApplicableCount(parseInt(weekYear),currentYear,getResponse.current_week,empValue['joinedYear'],empValue['joinedWeek'],empValue['resignedYear'],empValue['resignedWeek'],weekStart,weekEnd)
                                 let ontimeApprovedCount = empValue['ontimeApproved_count']
                                 let delayedApprovedCount = empValue['delayedApproved_count']
                                 let notApprovedCount = empValue['notApproved_count']
+                                let approvedByName = empValue['name']
                                 let totalApprovalWeeks = ontimeApprovedCount + delayedApprovedCount + notApprovedCount
-                                let minWeeks = Math.min(applicableweekCount,totalApprovalWeeks)
+                                // let minWeeks = Math.min(applicableweekCount,totalApprovalWeeks)
+                                console.log(ontimeApprovedCount,delayedApprovedCount,notApprovedCount,totalApprovalWeeks)
                                 k += '<tr>'
-                                k += '<td>'+ empKey +'</td>'
+                                k += '<td>'+ approvedByName +'</td>'
                                 k += '<td>'+ ontimeApprovedCount +'</td>'
                                 k += '<td>'+ delayedApprovedCount +'</td>'
                                 k += '<td>'+ notApprovedCount +'</td>'
-                                k += '<td>'+ Math.abs( minWeeks - totalWeeks ) +'</td>'
+                                k += '<td>'+ Math.abs( totalWeeks - totalApprovalWeeks ) +'</td>'
                                 k += '</tr>'
                             });
                         k += '</tbody>';
@@ -453,6 +476,48 @@
         })
     });
    
+    $('#weekStart').on('change', function () {
+        var selectedValue = parseInt($(this).val(), 10);
+        $('#weekEnd option').each(function () {
+
+            var endValue = parseInt(this.value, 10);
+
+            // disable if less than weekStart
+            // $(this).prop('disabled', endValue < selectedValue);
+            if (endValue < selectedValue) 
+                {
+                    $(this).addClass('option-disabled');  
+                    $(this).prop('disabled',true)
+                }
+            else 
+                {
+                    $(this).removeClass('option-disabled');
+                    $(this).prop('disabled',false)
+                }
+        });
+    });
+    $('#weekEnd').on('change', function () {
+        var selectedValue = parseInt($(this).val(), 10);
+
+        $('#weekStart option').each(function () {
+
+            var endValue = parseInt(this.value, 10);
+
+            // disable if less than weekStart
+            // $(this).prop('disabled', endValue > selectedValue);
+            if (endValue > selectedValue) 
+                {
+                    $(this).addClass('option-disabled');  
+                    $(this).prop('disabled',true)
+                }
+            else 
+                {
+                    $(this).removeClass('option-disabled');
+                    $(this).prop('disabled',false)
+                }
+        });
+    });
+
     // load function for table submissionTbl
     function loadTblData(data, status, current_Year, current_Week, selectedYear, weekStart, weekEnd) {
         $('#submissionStatusTabl').empty();
@@ -607,6 +672,11 @@
             adjustedWeekEnd = Math.min(adjustedWeekEnd, current_Week-1);
         }
 
+        if( (resignedYear < selectedYear && resignedYear != null) || selectedYear < joinedYear  )
+        {
+            return 0;
+        }
+
         // Final check: if the week range is valid (end >= start), return the count
         if (adjustedWeekEnd >= adjustedWeekStart) {
             weekDifference = adjustedWeekEnd - adjustedWeekStart
@@ -638,12 +708,17 @@
                         )
                     ) ||
                     (
-                        joinedYear < selectedYear && (
-                            resignedYear == selectedYear 
-                                ? i < resignedWeek 
-                                : true
+                        joinedYear > selectedYear ? false :
+                            (
+                                joinedYear < selectedYear && (
+                                    resignedYear != null
+                                    ? (resignedYear == selectedYear 
+                                        ? i < resignedWeek 
+                                        : ( resignedYear < selectedYear ? false : true))
+                                    : true
+                            )
                         )
-                    )
+                    ) 
                 )
             ) ||
             (
@@ -657,8 +732,8 @@
                     ) ||
                     (
                         joinedYear < selectedYear && (
-                            resignedYear == selectedYear 
-                                ? i < resignedWeek 
+                            resignedYear != null
+                                ? (resignedYear == selectedYear ? i < resignedWeek : false)
                                 : i < current_Week
                         )
                     )

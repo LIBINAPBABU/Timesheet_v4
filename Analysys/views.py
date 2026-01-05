@@ -140,12 +140,18 @@ def weeklyTimesheetStatus(request):
 def getWeeklyTimesheetStatus(request):
     current_date = datetime.now()
     week_start_date = current_date - timedelta(days=current_date.weekday())
-    current_weekyear = week_start_date.year
+    week_end_date = week_start_date + timedelta(days=6)
+    current_weekyear = week_end_date.year
+    # current_weekyear = week_start_date.year
     current_week = int(week_start_date.strftime("%V"))
 
     selectedYear = current_weekyear
-    selectedWeekStart = current_week - 8
-    selectedWeekEnd = current_week
+    if current_week <= 8 :
+        selectedWeekStart = 1
+        selectedWeekEnd = 8
+    else:
+        selectedWeekStart = current_week - 8
+        selectedWeekEnd = current_week
     selectedEmployee = ''
 
     # Get all relevant employees and annotate timesheet data
@@ -265,7 +271,9 @@ def getWeeklyTimesheetStatus(request):
     return JsonResponse({
         "employees": dict(result),
         'year': current_weekyear,
-        'current_week': current_week
+        'current_week': current_week,
+        'DropDownWeekStart' : selectedWeekStart,
+        'DropDownWeekEnd' : selectedWeekEnd
     })
 
 def getApprovalStatusFromCache(task_status_lookup, user_id, weeknumber, year):

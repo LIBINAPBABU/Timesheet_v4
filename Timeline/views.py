@@ -1133,19 +1133,19 @@ def unlock_timesheet(request):
                 existing_timesheet.unlock_status = "Requested"
                 existing_timesheet.unlock_reason = unlock_reason
                 existing_timesheet.save()
-        # else:
-            # TimesheetStatus.objects.create(
-            #     timesheet_status="locked",
-            #     weeknumber=week_start_date.strftime("%V"),
-            #     submission_status= False,#(week_start_date + timedelta(days=6)).date() >= datetime.today().date(),
-            #     action_status= False, #getSubmissionStatus(week_start_date),
-            #     unlock_status="Requested",
-            #     weekyear=week_start_date.year,
-            #     uid=request.user,
-            #     unlock_reason=unlock_reason
-            # )
-        # #send_unlock_email(request.user, week_start_date)
-        # return JsonResponse({'success': True, 'message': 'Timesheet unlock request send successfully.'})
+        else:
+            TimesheetStatus.objects.create(
+                timesheet_status="locked",
+                weeknumber=week_start_date.strftime("%V"),
+                submission_status= False,#(week_start_date + timedelta(days=6)).date() >= datetime.today().date(),
+                action_status= False, #getSubmissionStatus(week_start_date),
+                unlock_status="Requested",
+                weekyear=week_start_date.year,
+                uid=request.user,
+                unlock_reason=unlock_reason
+            )
+        # send_unlock_email(request.user, week_start_date)
+        return JsonResponse({'success': True, 'message': 'Timesheet unlock request send successfully.'})
 
     except ValueError:
         return JsonResponse({'success': False, 'message': 'Invalid date format.'}, status=400)

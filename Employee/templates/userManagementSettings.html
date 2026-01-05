@@ -37,9 +37,11 @@
         </div>
     </div>
     <div class="card-body">
-        <table class="table table-striped table-sm">
-           <!-- table content -->
-        </table>
+        <div class="table-responsive" style="height: 84dvh;">
+            <table class="table table-striped table-sm position-relative">
+            <!-- table content -->
+            </table>
+        </div>
     </div>
 </div>
 <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModal" aria-hidden="true">
@@ -135,13 +137,13 @@
     function load_data(response){
         $('.table').empty();
         var k='<thead>'
-        k+='<th>Name</th>'
+        k+='<th class="position-sticky top-0">Name</th>'
         if (selectedRadio == "pageRadioButton"){
-            k+='<th>Module Name</th>'
-            k+='<th>Page URL</th>'
+            k+='<th class="position-sticky top-0">Module Name</th>'
+            k+='<th class="position-sticky top-0">Page URL</th>'
         }
-        k+='<th>Edit</th>'
-        k+='<th>Delete</th>'
+        k+='<th class="position-sticky top-0">Edit</th>'
+        k+='<th class="position-sticky top-0">Delete</th>'
         k+='</thead>'
         k+='<tbody>'
         $.each(response, function(i, val){

@@ -155,7 +155,6 @@ def editEmployee(request):
 
         # Update user fields directly from the POST data
         user.first_name = request.POST.get('first_name')
-        user.role = role
         user.username = request.POST.get('username')
         user.email = request.POST.get('email')
         user.phone = request.POST.get('phone')
@@ -172,7 +171,7 @@ def editEmployee(request):
         user.jobtitle = jobtitleObj
         # Save updated fields
         user.save(update_fields = [
-            'first_name', 'role', 'username', 'designation', 
+            'first_name', 'username', 'designation', 
             'email', 'reporting_to', 'phone', 'is_active', 'resigned_date', 'jobtitle'
         ])
         OtherPermissions.objects.get_or_create(jobtitle=jobtitleObj)
@@ -258,11 +257,11 @@ def send_new_employee_email(user, reporting_to_id):
     name = user.first_name
     email = user.email
     mobileNo = user.phone
-    role = user.role
+    # role = user.role
     designation = user.designation
     reporting_manager = users.objects.filter(pk=reporting_to_id).first()
     
-    html_content = employeeAddedEmailBody(reporting_manager.first_name,userName,name,email,mobileNo,role,designation,datetime.today().date())
+    html_content = employeeAddedEmailBody(reporting_manager.first_name,userName,name,email,mobileNo,designation,datetime.today().date())
     msg = EmailMultiAlternatives(subject,text_content,"no-replay@gmail.com",[reporting_manager.email],cc=[email])
     msg.attach_alternative(html_content, "text/html")
     msg.send()
@@ -280,7 +279,7 @@ def send_changeReporter_email(user,change):
     username = user.username
     email = user.email
     mobile = user.phone
-    role = user.role
+    # role = user.role
     designation = user.designation
 
     text_content = "This is an important message."
@@ -290,7 +289,7 @@ def send_changeReporter_email(user,change):
     else:
         subject = 'Important Update: Change in Profile'
         message = "The profile is modified for"
-    html_content = employeeProfileChangedEmailBody(reportingManager,message,name,username,email,mobile,reportingManager,role,designation)
+    html_content = employeeProfileChangedEmailBody(reportingManager,message,name,username,email,mobile,reportingManager,designation)
     msg = EmailMultiAlternatives(subject,text_content,"icproprojects@gmail.com",[user.reporting_to.email],cc=[user.email])
     msg.attach_alternative(html_content, "text/html")
     msg.send()

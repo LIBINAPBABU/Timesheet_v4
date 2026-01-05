@@ -77,7 +77,7 @@ def rejectedEmailBody(name,reporterName,year,week,fromDate,toDate,project,task,r
     return html%(name,reporterName,year,week,fromDate,toDate,project,task,rejectionReason)
 
 # New Employee added by H.R To [Reporting Manager ,cc Employee]
-def employeeAddedEmailBody(managername,userName,name,email,mobileNo,role,designation,fromDate):
+def employeeAddedEmailBody(managername,userName,name,email,mobileNo,designation,fromDate):
     html="""
         <body>
             <p>Dear %s ,<br><br>
@@ -88,7 +88,6 @@ def employeeAddedEmailBody(managername,userName,name,email,mobileNo,role,designa
                 Name: %s<br>
                 Email: %s<br>
                 Mobile No: %s<br>
-                Role: %s<br>
                 Designation: %s<br>
                 Start Date: %s
                 <br><br>
@@ -98,10 +97,10 @@ def employeeAddedEmailBody(managername,userName,name,email,mobileNo,role,designa
                 </p>
         </body>
     """ 
-    return html%(managername,userName,name,email,mobileNo,role,designation,fromDate)
+    return html%(managername,userName,name,email,mobileNo,designation,fromDate)
 
 # profile changed by H.R  To [Reporting manager , Employee]
-def employeeProfileChangedEmailBody(managername,message,name,username,email,mobile,manager,role,designation):
+def employeeProfileChangedEmailBody(managername,message,name,username,email,mobile,manager,designation):
     html="""
         <body>
             <p>Dear %s ,<br><br>
@@ -118,8 +117,6 @@ def employeeProfileChangedEmailBody(managername,message,name,username,email,mobi
             <br>
             Reporter Name : %s
             <br>
-            Role : %s
-            <br>
             Designation : %s
                 <br>
                 <br><br>
@@ -129,7 +126,7 @@ def employeeProfileChangedEmailBody(managername,message,name,username,email,mobi
                 </p>
         </body>
     """
-    return html%(managername,message,name,username,email,mobile,manager,role,designation)
+    return html%(managername,message,name,username,email,mobile,manager,designation)
 
 # Timesheet submission reminder
 def reminderMessageBody(employee_name, year, week, from_date, to_date):
